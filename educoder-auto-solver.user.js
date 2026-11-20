@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         头歌自动答题助手
 // @namespace    edu-helper.local
-// @version      1.0.0
+// @version      1.0.3
 // @author       如风
 // @description  头歌实训纯接口自动化：扫描 → 队列 → 逐关答题，全程不跳页
 // @icon         data:image/png;base64,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
@@ -34,7 +34,7 @@
   'use strict';
   if (document.querySelector('tg-answer-assistant')) return;
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.0.3';
   const API = 'https://data.educoder.net/api';
   const AK = 'e9dd5b4322f9f7d83d009de9bfa100c3';
   const SK = '2e3da06ae26ba9f76a5d8d355746f2fe';
@@ -346,24 +346,46 @@
     async chain(work, courseId) {
       const entry = await Api.entryGame(work.shixun_identifier, work.homework_id);
       if (!entry) return [];
-      const chain = [];
-      let cursor = String(entry);
-      while (cursor && cursor !== 'null' && !chain.includes(cursor)) {
-        chain.push(cursor);
-        let detail;
-        try {
-          detail = await Api.detail(cursor, work.homework_id);
-        } catch {
-          break;
-        }
+      const read = async gameId => {
+        try { return await Api.detail(gameId, work.homework_id); } catch { return null; }
+      };
+      const seed = String(entry);
+      const entryDetail = await read(seed);
+      if (!entryDetail) return [];
+
+      const seen = new Set();
+      const ordered = [];   // 从链头到链尾
+      const note = (gameId, detail) => ({ gameId, passed: detail?.game?.status === 2 });
+
+      // ① 从入口沿 prev_game 回溯到链头（入口本身已读过，不重复请求）
+      let cursor = seed;
+      while (cursor && cursor !== 'null' && !seen.has(cursor)) {
+        seen.add(cursor);
+        const detail = cursor === seed ? entryDetail : await read(cursor);
+        if (!detail) break;
+        ordered.unshift(note(cursor, detail));
         cursor = detail?.prev_game ? String(detail.prev_game) : '';
       }
-      return chain.reverse().map(gameId => ({
-        gameId,
-        homeworkId: work.homework_id,
-        courseId,
-        url: Route.taskUrl(courseId, work.homework_id, gameId),
-      }));
+
+      // ② 从入口沿 next_game 前进到链尾（入口之后尚未解锁的关卡也要算进来）
+      cursor = entryDetail?.next_game ? String(entryDetail.next_game) : '';
+      while (cursor && cursor !== 'null' && !seen.has(cursor)) {
+        seen.add(cursor);
+        const detail = await read(cursor);
+        if (!detail) break;
+        ordered.push(note(cursor, detail));
+        cursor = detail?.next_game ? String(detail.next_game) : '';
+      }
+
+      // 队列只放还没通过的关卡，和扫描时显示的「未完成数」保持一致
+      return ordered
+        .filter(item => !item.passed)
+        .map(item => ({
+          gameId: item.gameId,
+          homeworkId: work.homework_id,
+          courseId,
+          url: Route.taskUrl(courseId, work.homework_id, item.gameId),
+        }));
     },
     /** 当前页面能覆盖到的作业：班级页 → 本课程；关卡页 → 该作业。 */
     async homeworkList(courseId) {
@@ -624,112 +646,61 @@
       return Number.isFinite(delay) ? Math.max(0, delay) : 1000;
     },
     /** 带登录态抓取题干图片，转成 data URL 给视觉模型用。 */
+    /** 带登录态抓取题干图片，转成 data URL 交给视觉模型。 */
     async loadImages(urls) {
-      const images = [];
       const maxBytes = 3 * 1024 * 1024;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 10000);
-      try {
-        for (const raw of urls.slice(0, 4)) {
-          if (controller.signal.aborted) break;
-          if (typeof raw !== 'string' || !raw) continue;
-          try {
-            const url = new URL(raw, location.origin);
-            if (url.origin !== location.origin || !['http:', 'https:'].includes(url.protocol)) continue;
-            const response = await fetch(url.href, {
-              mode: 'same-origin',
-              credentials: 'same-origin',
-              signal: controller.signal,
-            });
-            const blob = await this.readImage(response, maxBytes);
-            if (!blob) continue;
-            const dataUrl = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result);
-              reader.onerror = () => reject(new Error('图片读取失败'));
-              reader.readAsDataURL(blob);
-            });
-            if (typeof dataUrl === 'string') images.push(dataUrl);
-          } catch { /* 单张失败不影响整体 */ }
-        }
-      } finally {
-        clearTimeout(timer);
+      const images = [];
+      for (const raw of urls.slice(0, 4)) {
+        if (typeof raw !== 'string' || !raw) continue;
+        let url;
+        try { url = new URL(raw, location.origin); } catch { continue; }
+        if (!['http:', 'https:'].includes(url.protocol)) continue;
+        const dataUrl = await this.fetchImage(url.href, maxBytes);
+        if (dataUrl) images.push(dataUrl);
       }
       return images;
     },
-    async readImage(response, maxBytes) {
-      const type = response.headers.get('Content-Type') || '';
-      if (!response.ok || !type.toLowerCase().startsWith('image/')
-        || Number(response.headers.get('Content-Length')) > maxBytes) {
-        await response.body?.cancel();
-        return null;
-      }
-      if (!response.body) return null;
-      const reader = response.body.getReader();
-      const chunks = [];
-      let size = 0;
-      try {
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          size += value.byteLength;
-          if (size > maxBytes) {
-            await reader.cancel();
-            return null;
-          }
-          chunks.push(value);
+    /**
+     * 下载单张图片并转成 data URL。
+     * 附件会 302 跳到阿里云 OSS，而 OSS 不返回 CORS 头，
+     * 浏览器 fetch 会被拦掉，所以优先走 GM 请求。
+     */
+    fetchImage(url, maxBytes) {
+      const toDataUrl = blob => new Promise(resolve => {
+        if (!blob || !String(blob.type).startsWith('image/') || blob.size > maxBytes) {
+          resolve('');
+          return;
         }
-      } finally {
-        reader.releaseLock();
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(blob);
+      });
+
+      if (typeof GM_xmlhttpRequest === 'function') {
+        return new Promise(resolve => {
+          GM_xmlhttpRequest({
+            method: 'GET',
+            url,
+            timeout: 20000,
+            responseType: 'arraybuffer',
+            onload: async res => {
+              if (res.status !== 200 || !res.response) { resolve(''); return; }
+              const match = /content-type:\s*([^\r\n;]+)/i.exec(String(res.responseHeaders || ''));
+              const type = (match?.[1] || 'image/png').trim();
+              resolve(await toDataUrl(new Blob([res.response], { type })));
+            },
+            onerror: () => resolve(''),
+            ontimeout: () => resolve(''),
+          });
+        });
       }
-      return size ? new Blob(chunks, { type }) : null;
-    },
-    buildRequest(cfg, system, prompt, forCode, images = []) {
-      if (!AiSettings.ready(cfg)) throw new AiRequestError('AI 配置不完整', false);
-      let url, extra;
-      try {
-        url = AiSettings.endpoint(cfg.base);
-        extra = AiSettings.extraParams(cfg.extraBody);
-      } catch (error) {
-        throw new AiRequestError(error.message, false);
-      }
-      const { deepSeek, flash, nativeThinking, thinking, sampler, penalties } = AiSettings.modelOptions(cfg, forCode);
-      const tokens = forCode ? cfg.maxTokens : Math.min(cfg.maxTokens, thinking ? 4096 : 1024);
-      // 有图片时把 user 内容改成多模态数组，兼容 OpenAI Chat Completions 格式
-      const userContent = images.length
-        ? [
-          { type: 'text', text: prompt },
-          ...images.map(url => ({ type: 'image_url', image_url: { url } })),
-        ]
-        : prompt;
-      const payload = {
-        model: cfg.model,
-        max_tokens: tokens,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: userContent }],
-      };
-      if (sampler === 'temperature') payload.temperature = cfg.temperature;
-      if (sampler === 'topP') payload.top_p = cfg.topP;
-      if (penalties) {
-        if (cfg.frequencyPenalty) payload.frequency_penalty = cfg.frequencyPenalty;
-        if (cfg.presencePenalty) payload.presence_penalty = cfg.presencePenalty;
-      }
-      if (thinking) payload.reasoning_effort = nativeThinking && cfg.thinkLevel === 'medium' ? 'high' : cfg.thinkLevel;
-      if (nativeThinking) payload.thinking = { type: thinking ? 'enabled' : 'disabled' };
-      if (forCode && (cfg.jsonMode === 'on' || (deepSeek && cfg.jsonMode === 'auto'))) {
-        payload.response_format = { type: 'json_object' };
-      }
-      const timeout = (forCode ? cfg.timeout : Math.min(cfg.timeout, 45)) * 1000;
-      const body = { ...payload, ...extra };
-      if (sampler === 'temperature' || (deepSeek && !sampler)) delete body.top_p;
-      if (sampler === 'topP' || (deepSeek && !sampler)) delete body.temperature;
-      if (flash && sampler === 'topP') {
-        body.top_p = Math.max(0.95, numericSetting(body.top_p, 0.01, 1, cfg.topP));
-      }
-      if (deepSeek) {
-        delete body.frequency_penalty;
-        delete body.presence_penalty;
-      }
-      return { url: url.href, payload: body, timeout };
+
+      // 没有 GM 权限时退回 fetch（OSS 无 CORS 头时会失败，属于预期）
+      return fetch(url, { credentials: 'include' })
+        .then(res => (res.ok ? res.blob() : null))
+        .then(toDataUrl)
+        .catch(() => '');
     },
     async request(cfg, system, prompt, forCode = false, images = []) {
       const { url, payload, timeout } = this.buildRequest(cfg, system, prompt, forCode, images);
@@ -1158,6 +1129,7 @@
     jobs: [],            // {id, name, total, passed, status}
     queue: [],           // {gameId, homeworkId, courseId, url}
     cursor: null,        // 当前项
+    scanProgress: { done: 0, total: 0 },   // 扫描关卡列表的进度
     results: { passed: [], skipped: [], failed: [] },
     logs: [],
   };
@@ -1184,13 +1156,22 @@
     /** 扫描：只读，不提交。并发调用共用同一次结果。 */
     async scan() {
       if (this.scanning) return this.scanPromise || State.jobs;
+      const previous = State.phase;
       this.scanning = true;
+      State.phase = 'scanning';
+      State.scanProgress = { done: 0, total: 0 };
+      View.render();
       this.scanPromise = this.doScan();
       try {
         return await this.scanPromise;
       } finally {
         this.scanning = false;
         this.scanPromise = null;
+        // 扫描期间若没有别的流程接管，就回到待机
+        if (State.phase === 'scanning') {
+          State.phase = previous === 'scanning' ? 'idle' : previous;
+        }
+        View.render();
       }
     },
     async doScan() {
@@ -1210,26 +1191,44 @@
         status: 'pending',
       }));
       View.render();
-      const total = State.jobs.reduce((sum, job) => sum + job.total, 0);
-      this.log(State.jobs.length
-        ? `发现 ${State.jobs.length} 份作业，共 ${total} 关待处理`
-        : '没有待处理的作业', State.jobs.length ? 'green' : 'amber');
+      if (!State.jobs.length) {
+        this.log('没有待处理的作业', 'amber');
+        State.queue = [];
+        return State.jobs;
+      }
+      this.log(`发现 ${State.jobs.length} 份作业`, 'blue');
+      // 扫描阶段就把队列建好：显示的数量和实际要跑的数量来自同一次链式读取
+      State.queue = await this.build();
+      const total = State.queue.length;
+      this.log(`共 ${total} 关待处理`, total ? 'green' : 'amber');
       return State.jobs;
     },
-    /** 构建队列：逐份作业取关卡链。 */
+    /** 构建队列：逐份作业取关卡链，同时推进扫描进度。 */
     async build() {
       const queue = [];
-      for (const job of State.jobs) {
+      const jobs = State.jobs;
+      State.scanProgress = { done: 0, total: jobs.length };
+      View.render();
+      for (let index = 0; index < jobs.length; index += 1) {
+        const job = jobs[index];
         if (State.phase === 'paused') break;
         try {
-          const items = await Scanner.chain({ ...job, homework_id: job.id, shixun_identifier: job.shixun }, State.course.id);
-          // 队列实际会跑整条链（含已通过的关），分母必须用链长，否则会提前显示「已通过」
-          if (items.length) job.total = items.length;
-          this.log(`· ${job.name}　${items.length} 关`);
+          const items = await Scanner.chain(
+            { ...job, homework_id: job.id, shixun_identifier: job.shixun },
+            State.course.id,
+          );
+          // chain 只返回未通过的关卡，分母与扫描显示一致
+          const estimated = job.total;
+          job.total = items.length;
+          const note = estimated && estimated !== items.length
+            ? `（平台统计 ${estimated} 关，以实际检出为准）` : '';
+          this.log(`· ${job.name}　${items.length} 关待处理${note}`);
           queue.push(...items);
         } catch (error) {
           this.log(`· ${job.name} 读取失败：${error.message}`, 'amber');
         }
+        State.scanProgress = { done: index + 1, total: jobs.length };
+        View.render();
       }
       return queue;
     },
@@ -1243,17 +1242,11 @@
         return;
       }
       try {
-        // 已经扫过就直接用结果，不重复请求
-        if (!State.jobs.length) {
-          State.phase = 'scanning';
-          View.render();
+        // scan 内部会进入 scanning 相位并建好队列，这里只保证它存在
+        if (!State.jobs.length || !State.queue.length) {
           await this.scan();
           if (!State.jobs.length) { State.phase = 'idle'; View.render(); return; }
         }
-        State.phase = 'scanning';
-        this.log('正在读取关卡列表…');
-        View.render();
-        State.queue = await this.build();
       } catch (error) {
         // 还没开始跑，回到待机，让用户可以修好条件后重新点开始
         State.phase = 'idle';
@@ -1688,6 +1681,29 @@ progress::-webkit-progress-bar { border-radius: 999px; background: var(--md-sys-
 progress::-webkit-progress-value { border-radius: 999px; background: var(--md-sys-color-primary); }
 progress::-moz-progress-bar { border-radius: 999px; background: var(--md-sys-color-primary); }
 .entries { margin-top: 6px; }
+.scan-state {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 30px 12px 34px;
+}
+.scan-spinner {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
+  border-top-color: var(--md-sys-color-primary);
+  animation: scan-spin 0.9s linear infinite;
+}
+@keyframes scan-spin { to { transform: rotate(360deg); } }
+.scan-title { margin: 0; font-size: 13px; font-weight: 600; }
+.scan-progress {
+  width: min(240px, 80%); height: 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
+  overflow: hidden;
+}
+.scan-progress-fill {
+  height: 100%; width: 0; border-radius: 999px;
+  background: var(--md-sys-color-primary);
+  transition: width 0.25s ease;
+}
+.scan-count { margin: 0; font-size: 12px; color: var(--md-sys-color-on-surface-variant); }
 .row, .log { display: grid; align-items: baseline; column-gap: 9px; }
 .row {
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1839,6 +1855,15 @@ footer {
         </section>
         <section class="card">
           <h3>作业队列</h3>
+          <div class="scan-state" id="scanState" hidden>
+            <div class="scan-spinner" role="status" aria-label="正在获取题目列表"></div>
+            <p class="scan-title" id="scanTitle">正在获取完整题目列表…</p>
+            <div class="scan-progress" id="scanBar" role="progressbar"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="scan-progress-fill" id="scanFill"></div>
+            </div>
+            <p class="scan-count" id="scanCount">准备中…</p>
+          </div>
           <div class="entries" id="rows"></div>
         </section>
         <section class="card">
@@ -2402,9 +2427,16 @@ footer {
       $('bar').max = Math.max(1, planned);
       $('bar').value = results.passed.length;
 
-      $('rows').replaceChildren(...(jobs.length
-        ? jobs.map(job => this.jobRow(job, current))
-        : [this.field(scanning ? '正在扫描…' : '暂无作业', 'empty')]));
+      // 扫描态与队列态互斥：正在取题目列表时不显示旧的作业行
+      $('scanState').hidden = !scanning;
+      $('rows').hidden = scanning;
+      if (scanning) {
+        this.renderScanState();
+      } else {
+        $('rows').replaceChildren(...(jobs.length
+          ? jobs.map(job => this.jobRow(job, current))
+          : [this.field('暂无作业', 'empty')]));
+      }
       const recentLogs = logs.slice(-Prefs.data.logRows).map(([time, message, tone]) => {
         const row = document.createElement('div');
         row.className = 'log';
@@ -2420,6 +2452,16 @@ footer {
         : active ? '暂停' : '开始作答';
       $('start').disabled = scanning;
       $('stop').hidden = !Runner.busy();
+    },
+    /** 扫描态：转圈 + 文案 + 进度条，居中展示。 */
+    renderScanState() {
+      const $ = this.$;
+      const { done, total } = State.scanProgress;
+      const percent = total ? Math.min(100, Math.round((done / total) * 100)) : 0;
+      $('scanTitle').textContent = total ? '正在获取完整题目列表' : '正在读取作业列表';
+      $('scanCount').textContent = total ? `${done}/${total} 份作业` : '准备中…';
+      $('scanFill').style.width = `${percent}%`;
+      $('scanBar').setAttribute('aria-valuenow', String(percent));
     },
     renderSummary(settled) {
       const $ = this.$;
