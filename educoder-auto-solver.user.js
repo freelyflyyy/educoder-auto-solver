@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         头歌自动答题助手
 // @namespace    edu-helper.local
-// @version      1.0.3
+// @version      1.0.5
 // @author       如风
 // @description  头歌实训纯接口自动化：扫描 → 队列 → 逐关答题，全程不跳页
 // @icon         data:image/png;base64,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
@@ -34,7 +34,7 @@
   'use strict';
   if (document.querySelector('tg-answer-assistant')) return;
 
-  const VERSION = '1.0.3';
+  const VERSION = '1.0.5';
   const API = 'https://data.educoder.net/api';
   const AK = 'e9dd5b4322f9f7d83d009de9bfa100c3';
   const SK = '2e3da06ae26ba9f76a5d8d355746f2fe';
@@ -289,8 +289,8 @@
         kind,
         questions,
         // 题干里的图片（公式、表格截图）AI 看不到，至少把地址列出来
-        images: [...String(challenge.task_pass || '').matchAll(/attachments\/(\d+)/g)]
-          .map(hit => `${location.origin}/api/attachments/${hit[1]}`),
+        // 题干图片：只认附件头里标了 image/* 的，text/plain 之类是数据文件不能当图片下载
+        images: imagesOfHtml(challenge.task_pass),
         cases: (detail.test_sets || [])
           .filter(item => !item.is_invisible && item.input !== undefined)
           .map(item => ({ input: item.input, output: item.output })),
@@ -458,6 +458,21 @@
       this.data = data;
     },
   };
+
+  /** 从题干里挑出真正的图片附件（type=image/*），忽略 text/plain 等数据文件。 */
+  function imagesOfHtml(html) {
+    const text = String(html || '');
+    if (!text.includes('attachments/')) return [];
+    const found = new Set();
+    for (const hit of text.matchAll(/attachments\/(\d+)(?:\?[^\s"')<>\]]*)?/g)) {
+      const declared = /type=([^&\s"')<>\]]+)/i.exec(hit[0])?.[1] || '';
+      const type = decodeURIComponent(declared).toLowerCase();
+      // 没有类型声明时不下载，避免把数据文件当图片
+      if (!type.startsWith('image/')) continue;
+      found.add(`${location.origin}/api/attachments/${hit[1]}?type=${type}`);
+    }
+    return [...found];
+  }
 
   const AiSettings = {
     KEY: 'tg.ai.v7',
@@ -701,6 +716,53 @@
         .then(res => (res.ok ? res.blob() : null))
         .then(toDataUrl)
         .catch(() => '');
+    },
+    buildRequest(cfg, system, prompt, forCode, images = []) {
+      if (!AiSettings.ready(cfg)) throw new AiRequestError('AI 配置不完整', false);
+      let url, extra;
+      try {
+        url = AiSettings.endpoint(cfg.base);
+        extra = AiSettings.extraParams(cfg.extraBody);
+      } catch (error) {
+        throw new AiRequestError(error.message, false);
+      }
+      const { deepSeek, flash, nativeThinking, thinking, sampler, penalties } = AiSettings.modelOptions(cfg, forCode);
+      const tokens = forCode ? cfg.maxTokens : Math.min(cfg.maxTokens, thinking ? 4096 : 1024);
+      // 有图片时把 user 内容改成多模态数组，兼容 OpenAI Chat Completions 格式
+      const userContent = images.length
+        ? [
+          { type: 'text', text: prompt },
+          ...images.map(url => ({ type: 'image_url', image_url: { url } })),
+        ]
+        : prompt;
+      const payload = {
+        model: cfg.model,
+        max_tokens: tokens,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: userContent }],
+      };
+      if (sampler === 'temperature') payload.temperature = cfg.temperature;
+      if (sampler === 'topP') payload.top_p = cfg.topP;
+      if (penalties) {
+        if (cfg.frequencyPenalty) payload.frequency_penalty = cfg.frequencyPenalty;
+        if (cfg.presencePenalty) payload.presence_penalty = cfg.presencePenalty;
+      }
+      if (thinking) payload.reasoning_effort = nativeThinking && cfg.thinkLevel === 'medium' ? 'high' : cfg.thinkLevel;
+      if (nativeThinking) payload.thinking = { type: thinking ? 'enabled' : 'disabled' };
+      if (forCode && (cfg.jsonMode === 'on' || (deepSeek && cfg.jsonMode === 'auto'))) {
+        payload.response_format = { type: 'json_object' };
+      }
+      const timeout = (forCode ? cfg.timeout : Math.min(cfg.timeout, 45)) * 1000;
+      const body = { ...payload, ...extra };
+      if (sampler === 'temperature' || (deepSeek && !sampler)) delete body.top_p;
+      if (sampler === 'topP' || (deepSeek && !sampler)) delete body.temperature;
+      if (flash && sampler === 'topP') {
+        body.top_p = Math.max(0.95, numericSetting(body.top_p, 0.01, 1, cfg.topP));
+      }
+      if (deepSeek) {
+        delete body.frequency_penalty;
+        delete body.presence_penalty;
+      }
+      return { url: url.href, payload: body, timeout };
     },
     async request(cfg, system, prompt, forCode = false, images = []) {
       const { url, payload, timeout } = this.buildRequest(cfg, system, prompt, forCode, images);
