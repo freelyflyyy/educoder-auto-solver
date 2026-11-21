@@ -1,0 +1,4 @@
+# Cloudflare Worker Local Development Secrets
+# Copy this file to .dev.vars and replace with your own 64-character hex secret:
+# Generate with: openssl rand -hex 32
+SSH_TARGET_ADMIN_TOKEN=0000000000000000000000000000000000000000000000000000000000000000
