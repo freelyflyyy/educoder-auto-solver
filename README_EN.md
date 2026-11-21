@@ -8,15 +8,16 @@
 
 [English](README_EN.md) | [简体中文](README.md)
 
+[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)]()
+[![ScriptCat](https://img.shields.io/badge/ScriptCat-Install-orange.svg)](https://scriptcat.org/zh-CN/script-show-page/9163)
 [![Platform](https://img.shields.io/badge/Platform-ScriptCat%20%7C%20Tampermonkey-green.svg)](https://docs.scriptcat.org/)
 [![Target](https://img.shields.io/badge/Target-Educoder-blue.svg)](https://www.educoder.net)
 [![Architecture](https://img.shields.io/badge/Arch-Pure%20API%20%7C%20Zero%20DOM%20Jumps-critical.svg)]()
-[![AI-Engine](https://img.shields.io/badge/AI-DeepSeek%20%7C%20OpenAI-orange.svg)]()
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
 </div>
 
-**educoder-auto-solver** is an advanced, pure API-driven automated solving userscript engineered for the Educoder platform. By interacting directly with underlying endpoints and protocol flows, it executes an end-to-end automated pipeline: **Scan → Queue → Solve → Grade & Submit**, entirely in the background.
+**educoder-auto-solver** is an advanced, pure API-driven automated solving userscript engineered for the Educoder platform. By interacting directly with underlying REST endpoints and grading protocols, it executes an end-to-end automated pipeline: **Scan → Queue → Solve → Grade & Submit**, entirely in the background without refreshing or redirecting the browser.
 
 If you are frustrated with Educoder's sluggish page transitions and endless manual reloads, tired of fragile plugins relying on DOM-clicking hacks, or looking for a definitive solution to autonomously scan assignments, crack choice questions instantly, and leverage cutting-edge LLMs to conquer complex programming challenges — **educoder-auto-solver is your ultimate choice.**
 
@@ -25,48 +26,71 @@ If you are frustrated with Educoder's sluggish page transitions and endless manu
 ## Highlights
 
 * **Pure API Protocol Architecture (Zero DOM Jumps)**  
-  Completely eliminates flaky DOM manipulation, simulated clicking, and frequent page reloads. With a native MD5 signature generator and complete session management, the script communicates directly with Educoder's backend REST APIs without ever leaving or reloading the page.
+  Completely eliminates flaky DOM manipulation, simulated clicking, and frequent page reloads. With a native MD5 request signature generator and complete session management, the script communicates directly with Educoder's backend REST APIs without ever leaving or reloading the page.
 * **Instant Choice Probe**  
   Bypasses traditional question bank matching entirely. By exploiting protocol-level validation probes, the script dynamically extracts standard answers directly from the server response with 100% precision for both single and multiple-choice questions.
-* **Testcase Bypass & Auto-Mapping**  
-  For programming tasks with fully visible test suites, the script dynamically constructs an optimal input-to-output mapping structure on the fly — bypassing LLM inference entirely for zero latency, zero token consumption, and a guaranteed pass.
-* **AI Code Engine & Auto-Healing**  
-  Deeply integrated with DeepSeek and standard OpenAI-compatible endpoints:
-  * **Reasoning Models**: Native compatibility with DeepSeek-R1 / V4-Pro with customizable thinking depth.
-  * **Multimodal Vision**: Automatically captures and encodes authenticated problem screenshots and diagrams for vision-capable models.
-  * **Auto-Healing Loop**: If a test case fails, the engine analyzes compilation errors and grading logs against the original template, automatically refining the code until all tests pass.
-* **Smart Pipeline Runner**  
-  Equipped with a robust state machine. It traces and resolves challenge dependency chains across courses or individual assignments, with support for pause, resume, single-stepping, and automatic skipping of graphical/VNC-based tasks.
+* **Grading-First Solving Strategy**  
+  Educoder delivers actual evaluation scripts alongside tasks. The script extracts native data before resorting to LLM generation:
+  * **Fill-in-the-blanks**: Reads `evaluate.py` directly from the task repository, extracting `s == "…"` literal assertions to achieve instant 100% passes.
+  * **Three-Tier Hierarchy for Code Tasks**: **Reference Answers ➔ Testcase Table Mapping ➔ AI Fallback Generation**.
+  * **Token Preservation (`aiFallback`)**: Native answers and visible test suites take precedence. AI models are only invoked when no answers or public testcases are available and the `aiFallback` toggle is enabled.
+* **AI Code Engine & Anti-Regression (Auto-Heal)**  
+  Deeply integrated with DeepSeek (V3 / V4-Pro / R1) and standard OpenAI-compatible endpoints:
+  * **Reasoning Models & Multimodal**: Native compatibility with thinking models. Features strict `image/*` MIME filtering to ignore raw text data files and only feed valid screenshots to vision models.
+  * **Prompt Context Injection**: Evaluation code (`evaluate.py`), hidden test case structures, and string comparison rules are packaged directly into the prompt.
+  * **Anti-Regression Retries**: During failed retries, compiler logs, error diffs, and an explicit list of "passed test cases" are injected to stop the model from breaking already passing inputs.
+* **Smart Pipeline Runner & Smooth UI**  
+  * **Bidirectional Chain Scanning**: Traces challenges both backward (`prev_game`) and forward (`next_game`) to guarantee zero missed challenges even if post-entry tasks remain locked.
+  * **Animated Scan Progress**: The queue panel renders a centered loading spinner, progress bar, and real-time counter (X/Y homeworks).
+  * **Flicker-Free Rendering**: Uses `requestAnimationFrame` to batch UI updates and automatically clears poll timers when leaving the single-page application.
+
+> **Supported Challenge Types**:  
+> ✅ Supported: Multiple-choice questions (single & multiple), text fill-in-the-blanks (with `evaluate.py`), programming tasks (C/C++, Python, Java, etc.).  
+> ⏭️ Automatically Skipped: Graphical virtual desktop environments (StarUML, VNC, Logisim).
 
 ---
 
-## Quick Start
+## Installation
 
-### 1. Install a Userscript Manager
-We recommend **[ScriptCat](https://docs.scriptcat.org/)** for optimal compatibility with modern userscript standards, or **[Tampermonkey](https://www.tampermonkey.net/)**.
+### Method 1: One-Click Install via ScriptCat (Recommended)
+If you use **[ScriptCat](https://docs.scriptcat.org/)**, install directly from the official script page to receive automatic update notifications:
 
-### 2. Install the Script
-1. Open [educoder-auto-solver.user.js](educoder-auto-solver.user.js) and copy the source code.
-2. Create a new userscript in your userscript manager dashboard, paste the code, and save.
+👉 **[Install from ScriptCat: educoder-auto-solver](https://scriptcat.org/zh-CN/script-show-page/9163)**
 
-### 3. Open Educoder & Launch
-1. Navigate to any assignment or challenge page on [Educoder](https://www.educoder.net/).
-2. Click the floating purple **Auto Solver** icon in the bottom-right corner to open the control panel.
-3. Click **Scan Challenges** to build the task queue, then click **Start Solving** to let the pipeline run automatically.
+---
+
+### Method 2: Manual Install (Tampermonkey / ScriptCat)
+1. Ensure you have installed a userscript manager extension: **[ScriptCat](https://docs.scriptcat.org/)** (recommended) or **[Tampermonkey](https://www.tampermonkey.net/)**.
+2. Open the source file [educoder-auto-solver.user.js](educoder-auto-solver.user.js) and copy the entire code.
+3. In your userscript manager dashboard, create a new script, paste the code, and click Save.
+
+---
+
+## Usage
+
+1. **Navigate to Educoder**: Log in and visit any course assignment list or challenge page on [Educoder](https://www.educoder.net/).
+2. **Open Panel**: Click the floating purple **assistant icon** in the bottom-right corner to expand the control dock.
+3. **Run Pipeline**:
+   - Click **Scan Challenges**: The script traverses the assignment chain in both directions with an animated progress bar.
+   - Click **Start Solving**: The automated solver will silently progress through the entire queue in the background.
 
 ---
 
 ## AI Configuration
 
-Fine-tune LLM code generation and retry policies in the **AI Settings** tab of the control panel:
+Open **Settings** at the top of the panel to customize execution parameters:
 
-| Option | Recommended | Description |
+### General Settings
+* **Allow AI fallback when reference/cases are missing (`aiFallback`)**: Recommended on. The script only calls the AI code engine if the platform neither provides reference code nor full public test suites.
+
+### AI Endpoint Settings (Settings ➔ AI)
+| Parameter | Recommended | Description |
 | :--- | :--- | :--- |
-| **Base URL** | `https://api.deepseek.com/v1` | Compatible with any OpenAI-compatible endpoint (OneAPI, Bailian, etc.) |
-| **API Key** | `sk-xxxxxx` | Your API key (stored securely in local `localStorage`) |
-| **Model** | `deepseek-chat` / `deepseek-v4-pro` | High-speed, high-accuracy coding models; use `deepseek-reasoner` for complex algorithms |
-| **Thinking** | `auto` / `high` | Automatically adjusts thinking budget for reasoning-enabled models |
-| **Vision** | Toggle on/off | Uploads rendered problem images when visual context is required |
+| **Base URL** | `https://api.deepseek.com/v1` | Compatible with any OpenAI-compatible endpoint (OneAPI, Bailian, SiliconFlow, etc.) |
+| **API Key** | `sk-xxxxxx` | Your API secret key (stored locally inside `localStorage`) |
+| **Model** | `deepseek-chat` / `deepseek-v4-pro` | High-speed, high-accuracy coding model; use `deepseek-reasoner` for complex algorithms |
+| **Thinking** | `auto` / `high` | Automatically manages thinking budget for reasoning-enabled models |
+| **Vision** | Toggle as needed | Uploads problem images for vision-capable models |
 
 ---
 

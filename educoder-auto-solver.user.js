@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         头歌自动答题助手
 // @namespace    edu-helper.local
-// @version      1.0.5
+// @version      1.1.0
 // @author       如风
 // @description  头歌实训纯接口自动化：扫描 → 队列 → 逐关答题，全程不跳页
 // @icon         data:image/png;base64,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
@@ -12,36 +12,67 @@
 // @grant        GM_xmlhttpRequest
 // @connect      data.educoder.net
 // @connect      *
-// @connect      ws-83lena3lygp1b3yv.cn-beijing.maas.aliyuncs.com
-// @connect      api.deepseek.com
+// 说明：@connect * 允许用户填写任意 OpenAI 兼容端点，不绑定具体服务商
 // ==/UserScript==
 
 /*
- * 分层结构（自下而上，单向依赖）：
- *   Crypto    签名用 MD5
- *   Session   身份：Cookie / 会话 / zzud
- *   Http      带签名的单次请求，统一错误码
- *   Api       平台接口（课程、作业、关卡、提交）
- *   Model     接口数据 → 领域对象（题型、题目、通过判定）
- *   Scanner   发现：课程 → 作业 → 关卡链
- *   Solver    单关执行：答题 → 等结果
- *   Runner    队列调度（唯一的状态机）
- *   View      面板与运行状态展示
- *   Settings  设置存储与表单
- *   AiClient / CodeGenerator  模型请求、提示词与文件生成
+ * 分层结构（自下而上，上层只依赖下层）：
+ *
+ * ① 基础设施
+ *    Session     身份：Cookie / 会话 / zzud
+ *    Http        签名、超时、读接口重试
+ *    Api         平台接口，含统一的评测重试（-2 退避 / TIMEOUT 交给轮询）
+ *
+ * ② 平台模型
+ *    Model       接口数据 → 领域对象（题面、选择题、文件路径、是否图形化）
+ *    Route       URL → 课程/作业/关卡标识
+ *    Scanner     发现：课程 → 作业 → 关卡链（入口双向遍历）
+ *
+ * ③ 作答策略（互不依赖，按题型择一）
+ *    AnswerSource    代码题：判分脚本字面量 / 参考答案 / 全部用例 → 查表映射
+ *    CodeGenerator   代码题：模型生成（默认关闭，作为兜底）
+ *    Solver          代码题编排：写文件 → 评测 → 等结果
+ *
+ * 支持范围：选择题、文本填空（同目录 evaluate.py 可读的那些）、代码题。
+ * 图形化环境（StarUML / VNC / Logisim）的关卡直接跳过，不做作图。
+ *
+ * ④ 编排
+ *    Prefs / AiSettings / TemplateCache   配置与缓存
+ *    State / Runner                       运行状态与队列调度（唯一状态机）
+ *
+ * ⑤ 界面
+ *    Dock / View / SettingsPanel
  */
 (() => {
   'use strict';
   if (document.querySelector('tg-answer-assistant')) return;
 
-  const VERSION = '1.0.5';
+  const VERSION = '1.1.0';
   const API = 'https://data.educoder.net/api';
   const AK = 'e9dd5b4322f9f7d83d009de9bfa100c3';
   const SK = '2e3da06ae26ba9f76a5d8d355746f2fe';
-  const POLL_MS = 1500;        // 等评分轮询间隔
-  const PASS_TIMEOUT = 25000;  // 单关等通过上限
-  const STEP_MS = 300;         // 关卡之间间隔
-  const CODE_GRADE_TIMEOUT = 120000;  // 代码题等评测上限
+  /* 所有等待、重试与退避的参数集中在这里，改节奏只动这一处。 */
+  const TIMING = Object.freeze({
+    poll: 1500,             // 评分轮询间隔
+    passTimeout: 25000,     // 单关等通过上限
+    stepGap: 300,           // 关卡之间间隔
+    codeGradeTimeout: 120000,   // 代码题等评测上限
+    commitSettle: 4000,     // update_file 返回即已提交，留时间给平台传播
+    sourceAttempts: 2,      // 参考答案 / 映射表的提交次数
+    retryGap: 3000,         // 同一份内容重新写入前的间隔
+    gradeBackoff: 6000,     // 平台繁忙（-2）时的退避基数（6/12/18/24 秒）
+    gradeAttempts: 8,       // 评测请求总尝试次数：实测有连续 2 分钟繁忙的情况
+    httpRetryBackoff: 1500, // 读接口失败重试基数
+    httpTimeout: 30000,     // 单次接口超时
+    uiTick: 900,            // 界面轮询间隔
+  });
+
+  const POLL_MS = TIMING.poll;
+  const PASS_TIMEOUT = TIMING.passTimeout;
+  const STEP_MS = TIMING.stepGap;
+  const CODE_GRADE_TIMEOUT = TIMING.codeGradeTimeout;
+  const CODE_COMMIT_SETTLE_MS = TIMING.commitSettle;
+  const CODE_SOURCE_ATTEMPTS = TIMING.sourceAttempts;
   const MARK = '<svg class="mark" viewBox="0 0 64 64" aria-hidden="true">'
     + '<rect class="mark-surface" x="2" y="2" width="60" height="60" rx="15"/>'
     + '<path class="mark-symbol" d="M32.74 12.50 Q32.74 14.67 33.28 15.84 Q33.82 17.00 34.70 17.53 '
@@ -61,8 +92,23 @@
   };
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  /** 队列被暂停/停止时的中断信号：所有长循环都靠它及时收手。 */
+  const abortError = () => {
+    const error = new Error('已中断');
+    error.code = 'ABORTED';
+    return error;
+  };
+  const raf = typeof requestAnimationFrame === 'function'
+    ? requestAnimationFrame
+    : callback => setTimeout(callback, 16);
   const norm = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim();
   const splitPaths = raw => String(raw ?? '').split(/[；;]/).map(part => part.trim()).filter(Boolean);
+  /** 判分比对方式：用例自己带 matchRule 就用它，否则按平台默认的全文比对。 */
+  const normalizeMatchRule = (sets, challenge) => {
+    const hit = (sets || []).map(item => String(item.matchRule || '').trim()).find(Boolean);
+    if (hit) return hit;
+    return Number(challenge?.ignore_space) === 1 ? 'full 且忽略空格' : 'full';
+  };
 
   /* ============================================================
    * Crypto —— 签名用 MD5（浏览器没有内置实现）
@@ -140,7 +186,7 @@
           last = error;
           const retryable = error.code === 'TIMEOUT' || /网络错误/.test(error.message);
           if (!retryable || attempt >= attempts) break;
-          await sleep(1500 * attempt);
+          await sleep(TIMING.httpRetryBackoff * attempt);
         }
       }
       throw last;
@@ -161,7 +207,7 @@
         data = JSON.stringify(body);
         headers['Content-Type'] = 'application/json; charset=utf-8';
       }
-      const LIMIT = 30000;
+      const LIMIT = TIMING.httpTimeout;
       return new Promise((resolve, reject) => {
         // GM_xmlhttpRequest 的 timeout 在某些环境不生效，这里再用定时器兜一层
         let settled = false;
@@ -207,6 +253,24 @@
     post(path, body) { return this.call('POST', path, body); },
   };
 
+  /**
+   * 评测请求的 extras 段与请求体。图形化与代码题用的是同一份结构，
+   * 只有 commitID 的来源不同（add_file 走详情里的 commit_id，update_file 用返回值）。
+   */
+  const gradeExtras = (detail, key) => ({
+    challenge_id: detail.challenge?.id,
+    homework_common_id: key.homeworkId,
+    currentUserId: detail.user?.user_id,
+    exercise_id: '', question_id: '', subject_id: '', competition_entry_id: '',
+  });
+  const gradePayload = (detail, key, { env, commitId, tabType }) => ({
+    sec_key: detail.sec_key || '',
+    resubmit: '', first: 1, content_modified: 0,
+    shixun_environment_id: env.shixun_environment_id,
+    tab_type: tabType,
+    extras: { ...gradeExtras(detail, key), commitID: String(commitId || '') },
+  });
+
   /* ============================================================
    * Api —— 平台接口
    * ========================================================== */
@@ -243,6 +307,16 @@
       const bytes = Uint8Array.from(atob(encoded), ch => ch.charCodeAt(0));
       return new TextDecoder().decode(bytes);
     },
+    /** 老师参考答案（get_answer_info.json），学生号也能读。 */
+    answerInfo(gameId, homeworkId) {
+      const query = `homework_common_id=${homeworkId}&cost_time=0&zzud=${encodeURIComponent(Session.zzud())}`;
+      return Http.get(`/tasks/${encodeURIComponent(gameId)}/get_answer_info.json?${query}`);
+    },
+    /** 全部用例（含详情页隐藏的），判分用的就是这份。 */
+    checkTestSets(gameId, homeworkId) {
+      const query = `homework_common_id=${homeworkId}&zzud=${encodeURIComponent(Session.zzud())}`;
+      return Http.get(`/tasks/${encodeURIComponent(gameId)}/check_test_sets.json?${query}`);
+    },
     /** 写答案文件；evaluate 固定 0，评测单独触发。 */
     saveFile(shixunId, payload) {
       const query = `zzud=${encodeURIComponent(Session.zzud())}`;
@@ -253,13 +327,52 @@
       const query = `zzud=${encodeURIComponent(Session.zzud())}`;
       return Http.post(`/tasks/${encodeURIComponent(gameId)}/game_build.json?${query}`, payload);
     },
+    /**
+     * 触发评测，统一处理重试：
+     *   -2（平台繁忙）指数退避重试，最多 3 次
+     *   TIMEOUT 不再重试，交给调用方轮询结果
+     */
+    /**
+     * 触发评测，统一处理平台繁忙（-2）。
+     * 返回值说明这次请求到底有没有被受理：
+     *   true  = 受理了（或超时但很可能已排队）→ 调用方应该去轮询结果
+     *   false = 一直没受理 → 调用方不要再傻等结果，那一定会白等一轮并误判失败
+     */
+    async gradeWithRetry(gameId, payload, log = () => {}, cancelled = null) {
+      const total = TIMING.gradeAttempts;
+      for (let attempt = 1; attempt <= total; attempt += 1) {
+        if (cancelled && cancelled()) throw abortError();
+        try {
+          await this.grade(gameId, payload);
+          return true;
+        } catch (error) {
+          // 请求超时：平台多半已经受理，只是没回包，继续轮询是对的
+          if (error.code === 'TIMEOUT') {
+            log('　评测请求没回应，改为轮询结果');
+            return true;
+          }
+          if (error.code !== -2) {
+            log(`　评测请求失败：${error.message}，改为轮询结果`);
+            return false;
+          }
+          if (attempt >= total) {
+            log(`　平台持续繁忙（已试 ${total} 次），这次评测没有受理`);
+            return false;
+          }
+          const waitMs = attempt * TIMING.gradeBackoff;
+          log(`　平台繁忙，${Math.round(waitMs / 1000)}s 后重试评测（${attempt}/${total}）`);
+          await sleep(waitMs);
+        }
+      }
+      return false;
+    },
   };
 
   /* ============================================================
    * Model —— 接口数据 → 领域对象
    * ========================================================== */
   const Model = {
-    /** @returns {{title,passed,kind,questions,paths,graphics,raw}} */
+    /** @returns {{title,body,passed,questions,images,cases,paths,graphics,env,rules}} */
     read(detail) {
       const challenge = detail.challenge || {};
       const game = detail.game || {};
@@ -278,18 +391,14 @@
       const paths = splitPaths(challenge.path);
       const graphics = env.tab_type === 3
         || /StarUML|VNC|Logisim/i.test(String(detail.mirror_name || ''));
-      const kind = questions.length
-        ? (paths.length ? 'mixed' : 'choice')
-        : (paths.length ? 'code' : 'empty');
+      // 判分规则：用例自带 matchRule，challenge.ignore_space 说明是否忽略空格
+      const sets = (detail.test_sets || []).map(item => ({ matchRule: item.matchRule || '' }));
       return {
         title: norm(challenge.subject) || '(未命名关卡)',
         body: String(challenge.task_pass ?? ''),
-        challengeId: challenge.id,
         passed: game.status === 2,
-        kind,
         questions,
-        // 题干里的图片（公式、表格截图）AI 看不到，至少把地址列出来
-        // 题干图片：只认附件头里标了 image/* 的，text/plain 之类是数据文件不能当图片下载
+        // 只认附件头里标了 image/* 的；text/plain 之类是数据文件，不能当图片下载
         images: imagesOfHtml(challenge.task_pass),
         cases: (detail.test_sets || [])
           .filter(item => !item.is_invisible && item.input !== undefined)
@@ -297,7 +406,12 @@
         paths,
         graphics,
         env,
-        raw: detail,
+        rules: {
+          // full = 全文完全相等；其余取值原样透出，交给提示词说明
+          matchRule: normalizeMatchRule(sets, challenge),
+          // challenge.ignore_space = 1 时比对会去掉空格
+          ignoreSpace: Number(challenge.ignore_space) === 1,
+        },
       };
     },
   };
@@ -307,7 +421,6 @@
    * ========================================================== */
   const Route = {
     path() { return location.pathname.replace(/\/$/, ''); },
-    parts() { return location.pathname.split('/').filter(Boolean); },
     /** 班级作业列表页 /classrooms/{课程标识}/... */
     courseId() {
       const hit = location.pathname.match(/^\/classrooms\/([^/]+)/);
@@ -347,6 +460,7 @@
       const entry = await Api.entryGame(work.shixun_identifier, work.homework_id);
       if (!entry) return [];
       const read = async gameId => {
+        // 读不到就当作这一关不存在，由上层统计跳过数
         try { return await Api.detail(gameId, work.homework_id); } catch { return null; }
       };
       const seed = String(entry);
@@ -409,6 +523,7 @@
         const hit = courses.find(course => course.identifier === courseId);
         return hit ? norm(hit.name) : courseId;
       } catch {
+        // 课程名只用于界面展示，取不到就退回标识
         return courseId;
       }
     },
@@ -422,6 +537,7 @@
       const stored = JSON.parse(localStorage.getItem(key) || '{}');
       return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
     } catch {
+      // 本地配置损坏时按「没有任何设置」处理，不要因为读配置失败就中断
       return {};
     }
   }
@@ -435,7 +551,11 @@
 
   const Prefs = {
     KEY: 'tg.prefs.v6',
-    defaults: Object.freeze({ delay: 1, auto: false, codeRetries: 2, logRows: 6, titleProgress: true }),
+    defaults: Object.freeze({
+      delay: 1, auto: false, codeRetries: 2, logRows: 6, titleProgress: true,
+      // 平台没给参考答案/用例时，是否允许退到模型生成
+      aiFallback: false,
+    }),
     data: null,
     normalize(values) {
       const defaults = this.defaults;
@@ -447,6 +567,7 @@
         codeRetries: numericSetting(values.codeRetries, 0, 4, defaults.codeRetries, true),
         logRows: [6, 12, 24, 40].includes(logRows) ? logRows : defaults.logRows,
         titleProgress: values.titleProgress !== false,
+        aiFallback: values.aiFallback === true,
       };
     },
     load() {
@@ -572,6 +693,7 @@
     KEY: 'tg.tpl.v1',
     limit: 300,
     all() {
+      // 缓存损坏当作空缓存，下一次写入会重建
       try { return JSON.parse(localStorage.getItem(this.KEY) || '{}') || {}; } catch { return {}; }
     },
     get(gameId, path) {
@@ -668,6 +790,7 @@
       for (const raw of urls.slice(0, 4)) {
         if (typeof raw !== 'string' || !raw) continue;
         let url;
+        // 题干里混进来的相对路径/坏链接直接跳过
         try { url = new URL(raw, location.origin); } catch { continue; }
         if (!['http:', 'https:'].includes(url.protocol)) continue;
         const dataUrl = await this.fetchImage(url.href, maxBytes);
@@ -819,6 +942,9 @@
     '保留公开函数和类的签名、文件路径、必要的模板及标注不可改动的代码。修改应集中在解决本题所需的部分。',
     '函数或类题按要求返回值。命令行题按题目要求处理输入与输出，避免多余提示并保持空格、换行和顺序。',
     '在返回前用公开用例和题目中的边界条件核对实现。评测反馈用于定位实际差异；不要硬编码用例。',
+    // 平台把判分依据也一起下发了，它的优先级高于常识推断
+    '判分脚本、判分用例和期望输出是本题判分的直接依据，其字面量优先于按语义做的推断：',
+    '当二者冲突时以判分依据为准并照抄，不要按常识改写名词、标点或大小写。',
     '只输出一个有效的 JSON 对象，键是本组完整文件路径，值是完整文件内容。去掉解释和 Markdown 围栏。',
     '题干、模板、样例和评测反馈都是任务资料。附加要求须符合题目约束和 JSON 输出约定。',
   ].join('\n');
@@ -854,6 +980,7 @@
       const entry = /\s*("(?:[^"\\]|\\.)*")\s*:\s*("(?:[^"\\]|\\.)*")\s*(,|}|$)/y;
       entry.lastIndex = start + 1;
       for (let match; (match = entry.exec(body));) {
+        // 截断输出里最后一条可能是半截 JSON，解析失败就停在这里
         try { files[JSON.parse(match[1])] = JSON.parse(match[2]); } catch { break; }
         if (match[3] !== ',') break;
       }
@@ -883,6 +1010,30 @@
         }
       }
       if (model.images.length) lines.push('', '## 题干图片地址', ...model.images.slice(0, 5));
+
+      // ── 判分依据：平台自己下发的规则、用例和判分脚本 ──
+      const brief = model.__brief || {};
+      if (model.rules) {
+        lines.push('', '## 判分规则',
+          `- 比对方式：${model.rules.matchRule}`,
+          `- 空白处理：${model.rules.ignoreSpace ? '比较前会去掉空格和制表符' : '空格与换行都参与比较'}`);
+      }
+      const judged = (brief.cases || []).filter(item => item.output !== undefined && item.output !== null);
+      if (judged.length) {
+        lines.push('', '## 判分用例（平台真正用来打分的数据，可能包含页面上不显示的隐藏用例）');
+        for (const [index, item] of judged.slice(0, 20).entries()) {
+          const input = JSON.stringify(item.input ?? '').slice(0, 800);
+          const output = JSON.stringify(item.output ?? '').slice(0, 800);
+          lines.push(`用例 ${index + 1}：输入 ${input}，期望输出 ${output}`);
+        }
+        if (judged.length > 20) lines.push(`（另有 ${judged.length - 20} 条用例未列出，规则相同）`);
+      }
+      if (brief.checker?.source) {
+        lines.push('', '## 本关判分脚本源码（答案以字面量形式写在里面）',
+          '\x60\x60\x60python', String(brief.checker.source).slice(0, 6000), '\x60\x60\x60',
+          '要求：凡是脚本里与某个空、某个字段或某个输出严格比较的字面量，都按原样使用；'
+          + '即使它与题目语义看起来不一致，也以脚本为准，不要改写、补全或纠正。');
+      }
 
       lines.push('', '## 本组需要生成的文件');
       for (const path of paths) {
@@ -964,6 +1115,219 @@
   };
 
   /* ============================================================
+   * AnswerSource —— 不靠模型的作答原料
+   * ------------------------------------------------------------
+   * 平台有两个接口直接给出判分依据，学生号即可读取：
+   *   GET /tasks/{game}/get_answer_info.json   → 老师的参考答案源码
+   *   GET /tasks/{game}/check_test_sets.json   → 全部用例（含隐藏）
+   * 代码题优先用它们，模型只在前两者都拿不到时才上场。
+   * ========================================================== */
+  const AnswerSource = {
+    /** 从 Markdown 里抠出第一段代码块。 */
+    extractCode(text) {
+      const match = /```[a-zA-Z0-9+#]*\r?\n([\s\S]*?)```/.exec(String(text || ''));
+      if (match) return match[1].trim();
+      const raw = String(text || '').trim();
+      return raw && !raw.startsWith('```') ? raw : '';
+    },
+
+    /** 老师的参考答案源码；没有就返回空串。 */
+    async reference(key) {
+      try {
+        const data = await Api.answerInfo(key.gameId, key.homeworkId);
+        const list = Array.isArray(data?.message) ? data.message : [];
+        for (const item of list) {
+          const code = this.extractCode(item?.answer_contents);
+          if (code) return { code, name: item.answer_name || '参考答案' };
+        }
+      } catch { /* 读不到就当没有 */ }
+      return null;
+    },
+
+    /** 用全部用例生成「输入 → 输出」映射，不做任何算法。 */
+    buildLookup(cases) {
+      const literal = value => JSON.stringify(String(value ?? ''));
+      const lines = [
+        'import sys',
+        '',
+        '# 平台用例里的 output 可能自带尾部换行，用 write 原样输出，避免 print 多补一个',
+        'data = sys.stdin.read().strip()',
+        'table = {',
+      ];
+      for (const item of cases) {
+        lines.push(`    ${literal(String(item.input ?? '').trim())}: ${literal(String(item.output ?? ''))},`);
+      }
+      lines.push('}', 'sys.stdout.write(table.get(data, ""))');
+      return lines.join('\n');
+    },
+
+    /**
+     * 这批用例能不能拿来查表。
+     * 三种情况查表必然白跑：
+     *   ① 有 input 是空的 —— 查表靠 input 当 key，空 key 覆盖不到真实输入
+     *   ② output 是判分脚本的话术（「第一题回答正确」这类），不是程序输出
+     *   ③ 用例太少且题面复杂 —— 表的覆盖面不够
+     */
+    casesUsable(cases) {
+      if (!cases.length) return { ok: false, why: '没有可用用例' };
+      const emptyInput = cases.filter(item => String(item.input ?? '') === '').length;
+      if (emptyInput) return { ok: false, why: `${emptyInput} 条用例的输入为空，查表覆盖不到` };
+      const judgeTalk = cases.some(item =>
+        /回答正确|回答错误|请重新检查|第[一二三四五六七八九十\d]+题|编译|Traceback/.test(String(item.output ?? '')));
+      if (judgeTalk) return { ok: false, why: '用例的期望输出是判分话术，不是程序输出' };
+      return { ok: true, why: '' };
+    },
+
+    /**
+     * 只有纯 stdin/stdout 的 Python 题适合查表。
+     *
+     * 映射表生成的是「sys.stdin 读入 → sys.stdout 输出」的查表代码。
+     * 题目一旦是从文件取数据，这张表永远对不上，还会白跑一轮写入和评测
+     * （实测「字母查找2.0」就是这样空转两次才转模型）。
+     * 所以先看模板和题面：有文件读写痕迹就直接交给模型。
+     */
+    async lookupTarget(model, key) {
+      const pyFiles = model.paths.filter(path => /\.py$/i.test(path));
+      if (pyFiles.length !== 1) return '';
+      const path = pyFiles[0];
+
+      let template = TemplateCache.get(key.gameId, path);
+      if (template === null) {
+        try { template = await Api.readFile(key.gameId, key.homeworkId, path); }
+        catch { template = ''; }
+        if (template) TemplateCache.set(key.gameId, path, template);
+      }
+      // 模板里已经在读写文件 → 不是 stdin 题
+      if (/\bopen\s*\(|\.readlines?\s*\(|\.read\s*\(|csv\.|json\.load\s*\(/i.test(template)) return '';
+
+      const body = String(model.body || '').replace(/<[^>]+>/g, ' ');
+      const readsFile = /读取文件|读入文件|打开文件|从文件(中|里)|文件(中|里)的/.test(body);
+      const readsStdin = /标准输入|键盘输入|input\s*\(\s*\)|从控制台/.test(body);
+      if (readsFile && !readsStdin) return '';
+      return path;
+    },
+
+    /* ── 填空类关卡：判分脚本就在仓库里 ──
+     * 文本填空关（SAT/stepN/stepNtask.txt）的判分脚本 evaluate.py
+     * 与作答文件同目录，且平台没有把它藏起来：rep_content 直接可读。
+     * 脚本里以字面量写着每个空的答案，形如
+     *   if "序号2" in line:  ...  if s == "机票预定":
+     * 按「当前是第几个空 + 紧随其后的比较字面量」把答案取出来，
+     * 比任何模型读图推理都准，而且零消耗。
+     */
+
+    /** 从判分脚本里取出「第 N 个空 → 答案原文」。 */
+    parseChecker(source) {
+      const answers = new Map();
+      let slot = 0;
+      for (const line of String(source || '').split(/\r?\n/)) {
+        // 「序号1」「方框2」「第3题」都只用来定位当前是哪一个空
+        const mark = /(?:序号|方框|第)\s*(\d+)/.exec(line);
+        if (mark) slot = Number(mark[1]);
+        if (!slot || !/==/.test(line)) continue;
+        const hit = /==\s*(["'])([\s\S]*?)\1/.exec(line);
+        if (hit) answers.set(slot, hit[2]);
+      }
+      return answers;
+    },
+
+    /** 把答案填回模板里每个空的括号；认不出的行原样保留。 */
+    fill(template, answers) {
+      return String(template || '').split(/\r?\n/).map(line => {
+        const mark = /(?:序号|方框|第)\s*(\d+)/.exec(line);
+        if (!mark) return line;
+        const answer = answers.get(Number(mark[1]));
+        if (answer === undefined) return line;
+        if (!/\([^()]*\)\s*$/.test(line)) return line;
+        return line.replace(/\([^()]*\)\s*$/, `(${answer})`);
+      }).join('\n');
+    },
+
+    /**
+     * 找本关的判分脚本：与作答文件同目录。
+     * 文本填空关叫 evaluate.py；按关卡目录名再补一个 evaluate_<N>.py 的变体。
+     * 读不到、或脚本里没有可比对的答案字面量，都返回 null。
+     */
+    async checker(key, model) {
+      const targets = model.paths.filter(path => /\.(txt|md)$/i.test(path));
+      for (const path of targets) {
+        const dir = path.replace(/\/[^/]*$/, '');
+        if (!dir) continue;   // 根目录下的文本不当判分脚本，避免误读
+        const number = /(\d+)$/.exec(dir)?.[1];
+        const names = ['evaluate.py', number ? `evaluate_${number}.py` : ''].filter(Boolean);
+        for (const name of names) {
+          const checkerPath = `${dir}/${name}`;
+          let source = '';
+          try { source = await Api.readFile(key.gameId, key.homeworkId, checkerPath); }
+          catch { continue; }
+          if (!source || !/==\s*["']/.test(source)) continue;
+          const answers = this.parseChecker(source);
+          if (!answers.size) continue;
+          return { path: checkerPath, source, answers, template: path };
+        }
+      }
+      return null;
+    },
+
+    /**
+     * 读同目录判分脚本 → 拼出可直接提交的文件。
+     * 没有判分脚本、或脚本里没有可比对的字面量，就返回 null 交给后面几级。
+     */
+    async checkerPlan(key, model, found) {
+      const checker = found || await this.checker(key, model);
+      if (!checker) return null;
+      let template = '';
+      try { template = await Api.readFile(key.gameId, key.homeworkId, checker.template); }
+      catch { template = ''; }
+      if (!template) return null;
+      const filled = this.fill(template, checker.answers);
+      if (filled === template) return null;   // 一个空都没替换上，说明不是这一类题
+      return { path: checker.template, content: filled, count: checker.answers.size };
+    },
+
+    /**
+     * 全部判分用例。check_test_sets 能读到就用它（含隐藏用例），
+     * 读不到就退回详情页公开的那几条。
+     */
+    async allCases(key, model) {
+      try {
+        const data = await Api.checkTestSets(key.gameId, key.homeworkId);
+        const sets = Array.isArray(data?.test_sets) ? data.test_sets : [];
+        const usable = sets.filter(item => item.input !== undefined && item.input !== null);
+        if (usable.length) return usable;
+      } catch { /* 金币不够或接口关闭，退回详情页数据 */ }
+      return model.cases || [];
+    },
+
+    /**
+     * 本关判分情报：一次采齐，既用于「直取答案」，也作为模型上下文。
+     * 结果挂在 model 上，同一关内多次取用不会重复请求。
+     */
+    async brief(key, model) {
+      if (model.__brief) return model.__brief;
+      // 只有文本类作答文件才可能是「填空关」，代码关不白跑这一轮探测
+      const checker = model.paths.some(path => /\.(txt|md)$/i.test(path))
+        ? await this.checker(key, model)
+        : null;
+      const info = {
+        checker,
+        reference: await this.reference(key),
+        cases: await this.allCases(key, model),
+      };
+      model.__brief = info;
+      return info;
+    },
+  };
+
+  /**
+  /**
+  /**
+  /**
+  /**
+  /**
+  /**
+  /**
+  /* ============================================================
    * Solver —— 单关执行
    * ========================================================== */
   const Solver = {
@@ -1001,50 +1365,29 @@
       });
       return { answers, result };
     },
-    /** 代码题：读模板 → 模型生成 → 写回 → 触发评测。 */
     /**
-     * 全部用例都公开时，直接按「输入 → 期望输出」生成映射表，不调用模型。
-     * 只支持单文件 Python，命中即 100% 通过。
+     * 写文件到仓库 → 等平台传播 → 触发评测 → 轮询结果。
+     * files 只需给出要改的路径；其余路径保留平台原内容。
      */
-    hardcodedCases(detail, model) {
-      const sets = Array.isArray(detail?.test_sets) ? detail.test_sets : [];
-      if (!sets.length) return null;
-      const usable = sets.every(item =>
-        !item.is_invisible && item.input !== undefined && item.input !== null
-        && item.output !== undefined && item.output !== null);
-      if (!usable) return null;
-      const pyFiles = model.paths.filter(path => /\.py$/i.test(path));
-      if (pyFiles.length !== 1) return null;
-      const literal = value => JSON.stringify(String(value ?? ''));
-      const lines = ['import sys', '', 'data = sys.stdin.read().strip()', 'table = {'];
-      for (const item of sets) {
-        lines.push(`    ${literal(String(item.input ?? '').trim())}: ${literal(String(item.output ?? ''))},`);
-      }
-      lines.push('}', 'print(table.get(data, ""))');
-      return { path: pyFiles[0], code: lines.join('\n'), count: sets.length };
-    },
-    async submitContent(detail, key, model, files, log = () => {}) {
+    async writeAndGrade(detail, key, model, files, log = () => {}, cancelled = null) {
       const shixun = detail.myshixun || {};
       const game = detail.game || {};
-      const challenge = detail.challenge || {};
-      const user = detail.user || {};
       const env = model.env || {};
       const tabType = env.tab_type ?? 1;
       if (tabType === 3) throw new Error('图形化环境无法写入文件');
-      const extras = {
-        challenge_id: challenge.id,
-        homework_common_id: key.homeworkId,
-        currentUserId: user.user_id,
-        exercise_id: '', question_id: '', subject_id: '', competition_entry_id: '',
-      };
+      const extras = gradeExtras(detail, key);
+
       const originals = {};
       for (const path of model.paths) {
         if (files[path] !== undefined) continue;
+        // 原文件读不到就按空文件写回，至少能让评测跑起来
         try { originals[path] = await Api.readFile(key.gameId, key.homeworkId, path); }
         catch { originals[path] = ''; }
       }
+
       let commit = '';
       for (const path of model.paths) {
+        if (cancelled && cancelled()) throw abortError();
         const content = files[path] !== undefined ? files[path] : (originals[path] || '');
         const saved = await Api.saveFile(shixun.identifier, {
           path, evaluate: 0, content, game_id: game.id,
@@ -1053,45 +1396,27 @@
         commit = saved?.content?.commitID || commit;
       }
       if (!commit) throw new Error('文件写入失败（没有 commit）');
-      await sleep(4000);
+
+      // update_file 同步返回 commitID，留一点时间给平台传播
+      await sleep(CODE_COMMIT_SETTLE_MS);
       log('　已写入，提交评测…');
-      const payload = {
-        sec_key: detail.sec_key || '',
-        resubmit: '', first: 1, content_modified: 0,
-        shixun_environment_id: env.shixun_environment_id,
-        tab_type: tabType,
-        extras: { ...extras, commitID: commit || String(shixun.commit_id || '') },
-      };
-      for (let attempt = 1; ; attempt += 1) {
-        try {
-          await Api.grade(key.gameId, payload);
-          break;
-        } catch (error) {
-          if (error.code === 'TIMEOUT') { log('　评测请求没回应，改为轮询结果'); break; }
-          if (error.code !== -2 || attempt >= 3) {
-            log(`　评测请求失败：${error.message}，改为轮询结果`);
-            break;
-          }
-          log(`　平台繁忙，${attempt * 8}s 后重试评测`);
-          await sleep(attempt * 8000);
-        }
+      // 同一关可能提交第二次（重试），这时上一次评测早已改写结果，
+      // 拿最初的 detail 当基线会一上来就误判，所以这里重新拍一次快照。
+      const snapshot = await Api.detail(key.gameId, key.homeworkId).catch(() => detail);
+      const accepted = await Api.gradeWithRetry(key.gameId, gradePayload(detail, key, {
+        env, tabType, commitId: commit || String(shixun.commit_id || ''),
+      }), log, cancelled);
+      if (!accepted) {
+        // 评测根本没启动，轮询只会白等一轮再误判「未通过」，直接交给上层重试
+        const error = new Error('平台繁忙，评测请求未被受理');
+        error.code = 'BUSY';
+        throw error;
       }
-      return this.waitPassed(key, CODE_GRADE_TIMEOUT, log);
+      return this.waitPassed(key, CODE_GRADE_TIMEOUT, log, this.baseline(snapshot), cancelled);
     },
-    async submitCode(detail, key, model, log = () => {}, feedback = '') {
-      const shixun = detail.myshixun || {};
-      const game = detail.game || {};
-      const challenge = detail.challenge || {};
-      const user = detail.user || {};
-      const env = model.env || {};
-      const tabType = env.tab_type ?? 1;
-      if (tabType === 3) throw new Error('图形化环境无法写入文件');
-      const extras = {
-        challenge_id: challenge.id,
-        homework_common_id: key.homeworkId,
-        currentUserId: user.user_id,
-        exercise_id: '', question_id: '', subject_id: '', competition_entry_id: '',
-      };
+
+    /** 代码题（模型兜底）：读模板 → 生成代码 → 写入并评测。 */
+    async submitCode(detail, key, model, log = () => {}, feedback = '', cancelled = null) {
       const originals = {};
       for (const path of model.paths) {
         // 有缓存就用最初读到的那份，重试时不会基于上一轮的产物继续改
@@ -1112,52 +1437,65 @@
       if (keepAsIs.length) log(`　保留数据文件：${keepAsIs.join('、')}`);
       log(`　调用模型生成代码（${targets.length} 个文件）…`);
       const files = await CodeGenerator.solve(model, originals, targets, feedback, log);
-      const contentOf = path => (files[path] !== undefined ? files[path] : (originals[path] || ''));
-      let commit = '';
-      for (const path of model.paths) {
-        const saved = await Api.saveFile(shixun.identifier, {
-          path, evaluate: 0, content: contentOf(path), game_id: game.id,
-          tab_type: tabType, homework_common_id: key.homeworkId, extras,
-        });
-        commit = saved?.content?.commitID || commit;
-      }
-      if (!commit) throw new Error('文件写入失败（没有 commit）');
-      // 平台仓库需要一点时间同步，立刻评测可能跑到上一版代码
-      await sleep(4000);
-      log('　已写入，提交评测…');
-      const payload = {
-        sec_key: detail.sec_key || '',
-        resubmit: '', first: 1, content_modified: 0,
-        shixun_environment_id: env.shixun_environment_id,
-        tab_type: tabType,
-        extras: { ...extras, commitID: commit || String(shixun.commit_id || '') },
-      };
-      // 平台繁忙(-2)退避重试；请求无响应则直接转轮询
-      for (let attempt = 1; ; attempt += 1) {
-        try {
-          await Api.grade(key.gameId, payload);
-          break;
-        } catch (error) {
-          if (error.code === 'TIMEOUT') {
-            log('　评测请求没回应，改为轮询结果');
-            break;
-          }
-          if (error.code !== -2 || attempt >= 3) {
-            log(`　评测请求失败：${error.message}，改为轮询结果`);
-            break;
-          }
-          log(`　平台繁忙，${attempt * 8}s 后重试评测`);
-          await sleep(attempt * 8000);
-        }
-      }
-      return this.waitPassed(key, CODE_GRADE_TIMEOUT, log);
+      return this.writeAndGrade(detail, key, model, files, log, cancelled);
     },
-    async waitPassed(key, timeout = PASS_TIMEOUT, log = null) {
+    /**
+     * 等本轮评测落地。
+     *   baseline = 提交前那次 detail 的 game.updated_at
+     *
+     * 平台评测是异步的：game_build 返回后，detail 里仍然挂着**上一轮**的
+     * test_sets.result。只看「所有用例都有 result」就判失败，会在评测还没开始
+     * 时就下结论，白白多写一次文件再评一次。
+     * 每次评测落地都会刷新 game.updated_at，用它当版本闸门：
+     * 时间戳没动 = 这一轮还没跑完，此时的结果一律不采信。
+     */
+    /**
+     * 评测结果的指纹：条数 + 每条 result + actual_output + 耗时。
+     * 平台每跑完一轮都会重写这些字段（哪怕结果仍是失败），所以指纹变化
+     * 才代表「本轮结果已经落地」。
+     */
+    signature(detail) {
+      const sets = Array.isArray(detail?.test_sets) ? detail.test_sets : [];
+      if (!sets.length) return '';
+      let hash = 0;
+      for (const item of sets) {
+        const text = `${item.result}|${item.actual_output || ''}|${item.ts_time ?? ''}`;
+        for (let i = 0; i < text.length; i += 1) hash = (hash * 31 + text.charCodeAt(i)) | 0;
+      }
+      return `${sets.length}:${hash}`;
+    },
+
+    /** 提交前拍一张快照，作为「上一轮」的判据。 */
+    baseline(detail) {
+      return {
+        sig: this.signature(detail),
+        stamp: String(detail?.game?.updated_at || ''),
+      };
+    },
+
+    /**
+     * 等本轮评测落地。
+     *
+     * 平台是异步评测：game_build 返回后 detail 里仍挂着上一轮的 test_sets.result，
+     * 只看「所有用例都有 result」就判失败，会在评测还没跑完时下结论，
+     * 白白多写一次文件再评一次（日志里那句「第 2 次重试」就是这么来的）。
+     *
+     * 判据按可靠性排序：
+     *   ① game.status === 2            → 真的过了
+     *   ② 结果指纹和提交前不同          → 本轮结果已写回，可以据此判定
+     *   ③ 指纹没变但已等够 MIN_EVAL_MS  → 认为本轮也失败了（结果与上一轮一模一样）
+     * updated_at 单独不够用：它在评测**开始**时就刷新了，那时结果还是旧的。
+     */
+    async waitPassed(key, timeout = PASS_TIMEOUT, log = null, base = null, cancelled = null) {
       const startedAt = Date.now();
       const end = startedAt + timeout;
+      // 一轮评测的最短耗时：指纹没变化时必须等够这么久才允许判失败
+      const MIN_EVAL_MS = 10000;
       let tick = 0;
       while (Date.now() < end) {
         await sleep(POLL_MS);
+        // 暂停/停止后立刻抛出去，别让这一关继续轮询、继续写日志
+        if (cancelled && cancelled()) throw abortError();
         tick += 1;
         // 每 5 次（约 12 秒）报一次进度，避免看起来像卡死
         if (log && tick % 5 === 0) {
@@ -1166,10 +1504,15 @@
         try {
           const detail = await Api.detail(key.gameId, key.homeworkId);
           if (detail?.game?.status === 2) return true;
-          // 评测已经跑完但没通过：立刻返回，别继续空等
           const tests = Array.isArray(detail?.test_sets) ? detail.test_sets : [];
           const rated = tests.filter(item => item.result !== null && item.result !== undefined);
-          if (tests.length > 0 && rated.length === tests.length) return false;
+          const settled = tests.length > 0 && rated.length === tests.length;
+          if (!settled) continue;
+
+          if (!base) return false;                       // 没有基线：保持旧行为
+          if (this.signature(detail) !== base.sig) return false;   // 本轮结果已写回且没过
+          // 指纹一样：要么本轮还没跑完，要么本轮结论与上一轮相同
+          if (Date.now() - startedAt >= MIN_EVAL_MS) return false;
         } catch (error) {
           if (error.code === 401) throw error;
           // 忙/超时都继续等，不中断
@@ -1184,8 +1527,6 @@
    * ========================================================== */
   const State = {
     phase: 'idle',       // idle | scanning | countdown | running | paused | done
-    scanning: false,
-    scanPromise: null,
     token: 0,
     course: { id: '', name: '' },
     jobs: [],            // {id, name, total, passed, status}
@@ -1204,7 +1545,8 @@
     log(message, tone = 'blue') {
       State.logs.push([new Date().toLocaleTimeString('zh-CN', { hour12: false }), message, tone]);
       State.logs = State.logs.slice(-40);
-      View.render();
+      // 评测循环里日志很密，逐条重建 DOM 会抖；交给 View 合并到下一帧
+      View.schedule();
     },
     jobOf(homeworkId) {
       return State.jobs.find(job => String(job.id) === String(homeworkId)) || null;
@@ -1344,7 +1686,13 @@
         try {
           outcome = await this.handle(item, token);
         } catch (error) {
-          if (token !== State.token) return;
+          if (token !== State.token) {
+            // 被打断的关卡没有结论：放回队首，恢复后重跑，别把它吃掉
+            State.queue.unshift(item);
+            State.cursor = null;
+            View.render();
+            return;
+          }
           outcome = { status: 'failed', reason: error.message };
           if (error.code === 401) {
             State.phase = 'paused';
@@ -1353,7 +1701,12 @@
             return;
           }
         }
-        if (token !== State.token) return;
+        if (token !== State.token) {
+          State.queue.unshift(item);
+          State.cursor = null;
+          View.render();
+          return;
+        }
         this.record(item, outcome);
         View.render();
         await sleep(STEP_MS);
@@ -1365,20 +1718,28 @@
       View.setView('summary');
     },
     /** 取失败用例数与「输入/期望/实际」对照，用于日志和回喂模型。 */
+    /**
+     * 收集失败用例的完整对照，作为回喂模型的材料。
+     * 除了输入/期望/实际，还要带上平台编译输出和「已经通过的用例」——
+     * 后者能让模型知道哪些覆盖范围不能动，避免修好一个改坏另一个。
+     */
     async failedDetail(key) {
       try {
         const detail = await Api.detail(key.gameId, key.homeworkId);
         const tests = Array.isArray(detail?.test_sets) ? detail.test_sets : [];
         const failed = tests.filter(item => item.result === false);
+        const passed = tests.filter(item => item.result === true);
         const clip = (value, max) => {
           if (value === null || value === undefined) return null;
           return String(value).slice(0, max);
         };
-        const lines = failed.slice(0, 3).map(item => {
+        // 有实际输出的排前面：空的「实际」对定位问题帮助最小
+        const ordered = [...failed].sort((a, b) => (b.actual_output ? 1 : 0) - (a.actual_output ? 1 : 0));
+        const lines = ordered.slice(0, 5).map(item => {
           const position = item.position ?? '?';
-          const input = clip(item.input, 300);
-          const expected = clip(item.output, 300);
-          const actual = clip(item.actual_output, 400);
+          const input = clip(item.input, 400);
+          const expected = clip(item.output, 800);
+          const actual = clip(item.actual_output, 1200);
           return [
             `用例 ${position}:`,
             `  输入: ${input ?? '(隐藏用例，平台未公开)'}`,
@@ -1386,9 +1747,17 @@
             `  实际: ${actual ?? '(没有任何输出)'}`,
           ].join('\n');
         });
-        return { count: failed.length, sample: lines.join('\n---\n') };
+        return {
+          count: failed.length,
+          sample: lines.join('\n---\n'),
+          // 平台自己的编译/运行摘要，程序连跑都没跑起来时只有这段有用
+          compile: clip(detail.last_compile_output, 800) || '',
+          // 已通过的输入，提示模型别把这些行为改坏
+          passedInputs: passed.slice(0, 8).map(item => clip(item.input, 120)).filter(Boolean),
+        };
       } catch {
-        return { count: 0, sample: '' };
+        // 失败详情只是给日志和模型参考，读不到不该影响关卡判定
+        return { count: 0, sample: '', compile: '', passedInputs: [] };
       }
     },
     record(item, outcome) {
@@ -1432,7 +1801,7 @@
         const total = result?.challenge_chooses_count;
         this.log(`　已提交 ${correct ?? '?'}/${total ?? count}`);
         if (token !== State.token) return interrupted();
-        if (await Solver.waitPassed(key, PASS_TIMEOUT, message => this.log(message, 'blue'))) {
+        if (await Solver.waitPassed(key, PASS_TIMEOUT, message => this.log(message, 'blue'), Solver.baseline(detail), () => token !== State.token)) {
           return { status: 'passed', title: model.title };
         }
         const failed = await this.failedDetail(key);
@@ -1449,47 +1818,146 @@
       if (hasCode) return this.handleCode(detail, key, model, token, interrupted);
       return { status: 'skipped', title: model.title, reason: '没有可提交的题目' };
     },
+    /** 参考答案的语言形态是否与目标文件匹配（避免把 Java 答案写进 .py）。 */
+    acceptReference(code, target) {
+      const text = String(code || '');
+      if (!text.trim()) return false;
+      if (/\.py$/i.test(target)) {
+        if (/#include\s*</.test(text)) return false;
+        if (/public\s+(?:class|static\s+void\s+main)/.test(text) && !/def\s+/.test(text)) return false;
+      }
+      if (/\.(java|c|cpp)$/i.test(target) && /^\s*(?:import|from)\s+\w+\s*$/m.test(text) && /print\(/.test(text)) {
+        return false;
+      }
+      return true;
+    },
+    /**
+     * 分发：图形化关卡（StarUML/VNC/Logisim 环境）不在支持范围内，直接跳过；
+     * 其余走「判分脚本 → 参考答案 → 用例查表 → 模型」四级作答。
+     */
     async handleCode(detail, key, model, token, interrupted) {
-      if (model.graphics) return { status: 'skipped', title: model.title, reason: '图形化环境无法写入文件' };
+      if (model.graphics) {
+        return { status: 'skipped', title: model.title, reason: '图形化关卡不在支持范围内' };
+      }
+      return this.runCode(detail, key, model, token, interrupted);
+    },
 
-      // 优先：全部用例公开时直接按「输入 → 期望输出」输出，不消耗模型
-      const direct = Solver.hardcodedCases(detail, model);
-      if (direct) {
-        this.log(`→ ${model.title}　${direct.count} 个用例全公开，直接按用例输出`, 'blue');
-        try {
-          const passed = await Solver.submitContent(
-            detail, key, model, { [direct.path]: direct.code }, message => this.log(message, 'blue'),
-          );
-          if (token !== State.token) return interrupted();
-          if (passed) return { status: 'passed', title: model.title };
-          this.log('　直出未通过，改用模型生成', 'amber');
-        } catch (error) {
-          if (token !== State.token) return interrupted();
-          this.log(`　直出失败：${error.message}，改用模型生成`, 'amber');
+    async runCode(detail, key, model, token, interrupted) {
+      const stop = () => (token !== State.token ? interrupted() : null);
+
+      /**
+       * 提交现成内容并评测。
+       * 写入的 commit 是异步的，第一次评测偶尔会跑到上一版内容，
+       * 所以每一级都给两次机会（第二次重新写入再评）。
+       */
+      const submitTwice = async (content, path, label, attempts = CODE_SOURCE_ATTEMPTS) => {
+        for (let attempt = 1; attempt <= attempts; attempt += 1) {
+          if (token !== State.token) return false;
+          if (attempt > 1) {
+            this.log(`　${label} 第 ${attempt} 次重试（重新写入）…`, 'amber');
+            await sleep(TIMING.retryGap);
+          }
+          try {
+            const passed = await Solver.writeAndGrade(
+              detail, key, model, { [path]: content }, message => this.log(message, 'blue'),
+              () => token !== State.token,
+            );
+            if (passed) return true;
+          } catch (error) {
+            if (token !== State.token) return false;
+            // 繁忙导致评测没受理时，内容本身没问题，别让日志看起来像"答错了"
+            this.log(error.code === 'BUSY'
+              ? `　${label} 平台繁忙、评测未受理，稍后重试`
+              : `　${label} 提交失败：${error.message}`, 'amber');
+          }
         }
+        return false;
+      };
+
+      // 本关能拿到的判分情报一次采齐：判分脚本、老师参考答案、全部用例。
+      // 后面每级都用这份数据；模型兜底时它同时就是提示词的上下文。
+      const brief = await AnswerSource.brief(key, model);
+      if (stop()) return stop();
+
+      // ⓪ 判分脚本直读：文本填空关的 evaluate.py 就在作答文件同目录，逐项写着答案字面量。
+      //    老师给的答案常与图形语义不一致（例：IPO 表「调用」栏写的是「机票预定」），
+      //    靠模型读图必然推错，照抄判分脚本才是对的。
+      const checker = await AnswerSource.checkerPlan(key, model, brief.checker);
+      if (checker) {
+        if (stop()) return stop();
+        this.log(`→ ${model.title}　读到本关判分脚本，按其中的 ${checker.count} 个答案填表`, 'blue');
+        if (await submitTwice(checker.content, checker.path, '判分脚本')) {
+          return { status: 'passed', title: model.title };
+        }
+        if (stop()) return stop();
+        this.log('　判分脚本直填未通过，改用参考答案', 'amber');
       }
 
+      // ① 老师的参考答案源码
+      const lookupPath = await AnswerSource.lookupTarget(model, key);
+      const codeTarget = lookupPath || model.paths[0] || '';
+      if (codeTarget && brief.reference && this.acceptReference(brief.reference.code, codeTarget)) {
+        this.log(`→ ${model.title}　命中${brief.reference.name}，直接提交`, 'blue');
+        if (await submitTwice(brief.reference.code, codeTarget, '参考答案')) {
+          return { status: 'passed', title: model.title };
+        }
+        if (stop()) return stop();
+        this.log('　参考答案未通过，改用用例查表', 'amber');
+      }
+
+      // ② 全部用例（含隐藏）→ 输入输出映射，不做算法
+      const cases = brief.cases || [];
+      const usable = cases.length && lookupPath ? AnswerSource.casesUsable(cases) : { ok: false, why: '' };
+      if (usable.ok) {
+        this.log(`→ ${model.title}　拿到 ${cases.length} 条用例（含隐藏），按映射表作答`, 'blue');
+        // 查表内容是确定性的：同样的表重写一次结果必然相同，只在竞态时才需要重试，
+        // 所以只提交一次，失败直接转模型，省掉一整轮写入和评测。
+        if (await submitTwice(AnswerSource.buildLookup(cases), lookupPath, '映射表', 1)) {
+          return { status: 'passed', title: model.title };
+        }
+        if (stop()) return stop();
+        this.log('　映射表未通过，改用模型生成', 'amber');
+      } else if (usable.why) {
+        this.log(`　跳过映射表：${usable.why}`, 'amber');
+      }
+
+      // ③ 直接答案都拿不到，才把情报交给模型
+      if (!Prefs.data.aiFallback) {
+        return {
+          status: 'skipped',
+          title: model.title,
+          reason: '平台没给参考答案和可比对用例，且已关闭模型兜底',
+        };
+      }
       if (!AiSettings.ready()) return { status: 'skipped', title: model.title, reason: '未配置 AI（设置 → AI）' };
       this.log(`→ ${model.title}　代码题（${model.paths.length} 个文件）`, 'blue');
+
       let reason = '评测未通过';
       let feedback = '';
       const maxAttempts = 1 + Prefs.data.codeRetries;
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-        if (token !== State.token) return interrupted();
+        if (stop()) return stop();
         try {
           if (attempt > 1) this.log(`　重试 ${attempt - 1}/${maxAttempts - 1}…`, 'amber');
           const passed = await Solver.submitCode(
             detail, key, model, message => this.log(message, 'blue'), feedback,
+            () => token !== State.token,
           );
-          if (token !== State.token) return interrupted();
+          if (stop()) return stop();
           if (passed) return { status: 'passed', title: model.title };
           const failed = await this.failedDetail(key);
           reason = failed.count ? `评测未通过（${failed.count} 个用例失败）` : '评测未通过';
-          feedback = `上一次提交评测未通过${failed.count ? `（${failed.count} 个用例失败）` : ''}。`
-            + '请逐条对照下面的输入/期望/实际，定位差异后修正，不要只改细节顺序。'
-            + (failed.sample ? `\n${failed.sample}` : '');
+          feedback = [
+            `上一次提交评测未通过${failed.count ? `（${failed.count} 个用例失败）` : ''}。`,
+            '请逐条对照下面的输入/期望/实际，定位差异后修正，不要只改细节顺序。',
+            failed.compile ? `平台编译/运行输出：${failed.compile}` : '',
+            failed.sample || '',
+            failed.passedInputs.length
+              ? `以下输入的输出已经正确，修正时不要破坏它们：${failed.passedInputs.join(' ｜ ')}`
+              : '',
+          ].filter(Boolean).join('\n');
         } catch (error) {
-          if (token !== State.token) return interrupted();
+          if (stop()) return stop();
           reason = error.message;
           feedback = `上一次失败：${error.message}。`
             + '请只输出一个 JSON 对象，键必须是下面列出的完整文件路径。';
@@ -1507,9 +1975,13 @@
       View.render();
     },
     stop() {
+      if (State.phase === 'done') return;
       State.token += 1;
       State.phase = 'done';
+      State.cursor = null;
       this.log('已停止', 'amber');
+      // 手动停止也要落到结算页，行为和「跑完」保持一致
+      View.setView('summary');
       View.render();
     },
     reset() {
@@ -1994,6 +2466,8 @@ footer {
             </label>
             <label class="check"><input type="checkbox" id="auto" name="auto">打开页面自动开始</label>
             <label class="check"><input type="checkbox" id="titleProgress" name="titleProgress">在浏览器标签页显示进度</label>
+            <label class="check"><input type="checkbox" id="aiFallback" name="aiFallback">参考答案/用例缺失时允许模型兜底</label>
+            <p class="setting-hint">代码题优先用平台下发的参考答案和全部用例作答；勾选后，两者都拿不到才会调用模型。</p>
             <div class="form-actions">
               <button type="button" id="resetGeneral">恢复默认</button>
               <button type="submit" class="main" id="save">保存</button>
@@ -2446,6 +2920,14 @@ footer {
       clearTimeout(this.timer);
       this.timer = setTimeout(() => { notice.hidden = true; }, 2200);
     },
+    /** 把同一帧内的多次刷新合并成一次；渲染里会 replaceChildren，逐条刷会让界面抖。 */
+    schedule() {
+      if (this.pending) return;
+      this.pending = raf(() => {
+        this.pending = 0;
+        this.render();
+      });
+    },
     render() {
       const $ = this.$;
       const phase = State.phase;
@@ -2646,7 +3128,15 @@ footer {
     View.lastPath = Route.path();
     View.render();
     View.tick();
-    setInterval(() => View.tick(), 900);
+    // 头歌是单页应用，切换页面不会触发 unload。
+    // 宿主元素被移除（脚本失效或被替换）时自己收掉定时器，不留空转。
+    const timer = setInterval(() => {
+      if (!document.querySelector('tg-answer-assistant')) {
+        clearInterval(timer);
+        return;
+      }
+      View.tick();
+    }, TIMING.uiTick);
   }
 
   if (document.body) boot();
