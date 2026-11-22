@@ -9,7 +9,7 @@
 [English](README_EN.md) | [简体中文](README.md)
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)]()
-[![Deploy to Cloudflare Workers](https://img.shields.io/badge/Deploy%20to-Cloudflare%20Workers-F38020.svg?logo=cloudflare&logoColor=white)](https://deploy.workers.cloudflare.com/?url=https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec)
+[![Deploy Guide](https://img.shields.io/badge/Deploy%20to-Cloudflare%20Workers-F38020.svg?logo=cloudflare&logoColor=white)](#deployment-guide-cloudflare-workers)
 [![Platform](https://img.shields.io/badge/Platform-Cloudflare%20Workers%20%7C%20Durable%20Objects-orange.svg)](https://developers.cloudflare.com/workers/)
 [![Protocol](https://img.shields.io/badge/Protocol-Raw%20TCP%20%7C%20SSHv2%20%7C%20RFC%204254-green.svg)](https://www.rfc-editor.org/rfc/rfc4254)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
@@ -41,29 +41,29 @@ Due to web browser security sandboxing (cross-origin restrictions and absence of
 
 ---
 
-## One-Click Deployment (Cloudflare Workers)
+## Deployment Guide (Cloudflare Workers)
 
-> [!NOTE]
-> Cloudflare's official "Deploy with Workers" flow requires GitHub build authorization. If you are not the repository owner (lacking direct write access), please click **Fork** in the top-right corner to duplicate this repository into your personal account first, then replace the username in the link below to deploy.
+This project resides in the `cf-ssh-exec` subdirectory of the monorepo. To ensure Cloudflare's build container identifies the project root correctly, use **Cloudflare Console Git Integration** or **Wrangler CLI local deployment**.
 
-### Method 1: Official One-Click Deployment (Recommended)
+### Method 1: Cloudflare Dashboard Git Integration (Zero CLI, Continuous CI/CD)
 
-👉 **[Deploy directly to Cloudflare Workers](https://deploy.workers.cloudflare.com/?url=https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec)**
+Connect your repository directly through the Cloudflare web dashboard for automatic build and deploy on every push:
 
-```text
-https://deploy.workers.cloudflare.com/?url=https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec
-```
-
-#### Step-by-Step Instructions:
-1. Click the deployment link above to launch the Cloudflare deployment wizard.
-2. Log in to Cloudflare and authorize access to GitHub; Cloudflare will automatically fetch dependencies, build the project, and distribute it to edge locations worldwide.
-3. **Bind Admin Secret (Mandatory)**:
-   * Once deployment completes, navigate to your Worker (`cf-ssh-exec`) in the Cloudflare Dashboard;
-   * Go to **Settings** ➔ **Variables and Secrets** ➔ **Secrets**;
-   * Click **Add** to configure the mandatory secret:
-     * **Variable Name**: `SSH_TARGET_ADMIN_TOKEN`
+1. **Open Dashboard**: Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) ➔ **Workers & Pages** ➔ **Create Application**;
+2. **Connect Repository**: Select **Workers** tab, click **Connect to Git**, and choose this repository (`educoder-auto-solver`);
+3. **Configure Build Settings (Crucial Steps)**:
+   * **Production branch**: Select `main` (or your active deployment branch);
+   * **Root directory**: **Enter `cf-ssh-exec`** (ensures Cloudflare builds in the subdirectory rather than failing at the root);
+   * **Build command**: Enter `npm ci`;
+   * **Deploy command**: Keep default `npx wrangler deploy`;
+   * **Build watch paths**: Under "Include paths", enter `cf-ssh-exec/**` (ensures changes outside the directory do not consume build quota).
+4. **Configure Runtime Secret (Mandatory)**:
+   * After saving deployment, navigate to your Worker's **Settings** ➔ **Variables and Secrets**;
+   * Under **Runtime variables and secrets**, click **+ Add variable**:
+     * **Type**: Select **Secret (Encrypted)**;
+     * **Name**: `SSH_TARGET_ADMIN_TOKEN`;
      * **Value**: A 64-character random hexadecimal string generated via `openssl rand -hex 32` in your local terminal.
-4. Save and deploy. Your Worker is now live and ready to serve requests!
+   * Save. Future pushes to the branch will trigger end-to-end automated builds!
 
 ---
 
@@ -82,7 +82,7 @@ Generate a 64-character administrative token:
 ```sh
 openssl rand -hex 32
 ```
-Save the value into a local `.dev.vars` file:
+Save the value into a local `.dev.vars` file (see `.dev.vars.example`):
 ```ini
 SSH_TARGET_ADMIN_TOKEN=your_64_character_hex_secret_here
 ```

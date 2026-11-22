@@ -6,17 +6,15 @@
  */
 
 import { DurableObject } from 'cloudflare:workers';
-
-/**
- * Maximum permissible target registration lifetime: 30 minutes (1800 seconds).
- */
-export const MAX_TARGET_TTL_SECONDS = 30 * 60;
+import { MAX_EXECUTIONS_PER_TOKEN, MAX_EXECUTIONS_PER_WINDOW, RESERVATION_GRACE_MS, TARGET_WINDOW_MS } from './access-policy';
 
 type Registration = {
 	registrationId: string;
 	hostKeyFingerprint: string;
 	expiresAt: number;
-	tokenDigest: ArrayBuffer;
+	tokenDigest?: ArrayBuffer;
+	claimDigest?: ArrayBuffer;
+	executionCount?: number;
 	windowStartedAt: number;
 	requestCount: number;
 };
@@ -29,18 +27,19 @@ type TargetRecord = { registration?: Registration; active?: Reservation };
  */
 export type Admission =
 	| { kind: 'denied' }
+	| { kind: 'token_exhausted' }
 	| { kind: 'busy' | 'rate_limited'; retryAfter: number }
 	| { kind: 'allowed'; hostKeyFingerprint: string; reservation: Reservation };
-
-const WINDOW_MS = 60_000;
-const REQUESTS_PER_WINDOW = 10;
-const RESERVATION_GRACE_MS = 5_000;
 
 /**
  * Computes the SHA-256 cryptographic digest of a token string for safe storage and comparison.
  */
 function tokenDigest(token: string): Promise<ArrayBuffer> {
 	return crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+}
+
+function randomToken(): string {
+	return Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -65,9 +64,12 @@ export class SshTargetRegistry extends DurableObject {
 			const now = Date.now();
 
 			// Verify registration existence, expiry, and execution token hash match
-			if (!registration || registration.expiresAt <= now || !crypto.subtle.timingSafeEqual(digest, registration.tokenDigest)) {
+			if (!registration?.tokenDigest || registration.expiresAt <= now || !crypto.subtle.timingSafeEqual(digest, registration.tokenDigest)) {
 				return { kind: 'denied' };
 			}
+			// Earlier issued tokens have no reliable lifetime usage count.
+			if (registration.executionCount === undefined) return { kind: 'denied' };
+			if (registration.executionCount >= MAX_EXECUTIONS_PER_TOKEN) return { kind: 'token_exhausted' };
 
 			// Concurrency control: only one concurrent SSH execution is permitted per target
 			const active = target?.active;
@@ -75,18 +77,18 @@ export class SshTargetRegistry extends DurableObject {
 				return { kind: 'busy', retryAfter: retryAfter(active.expiresAt, now) };
 			}
 
-			// Rolling window rate-limiting: maximum 10 executions per 60-second window
-			if (registration.windowStartedAt + WINDOW_MS <= now) {
+			if (registration.windowStartedAt + TARGET_WINDOW_MS <= now) {
 				registration.windowStartedAt = now;
 				registration.requestCount = 0;
 			}
-			if (registration.requestCount >= REQUESTS_PER_WINDOW) {
-				return { kind: 'rate_limited', retryAfter: retryAfter(registration.windowStartedAt + WINDOW_MS, now) };
+			if (registration.requestCount >= MAX_EXECUTIONS_PER_WINDOW) {
+				return { kind: 'rate_limited', retryAfter: retryAfter(registration.windowStartedAt + TARGET_WINDOW_MS, now) };
 			}
 
 			// Allocate execution reservation with a safety grace buffer to accommodate socket shutdown
 			const reservation = { id: crypto.randomUUID(), expiresAt: now + timeoutMs + RESERVATION_GRACE_MS };
 			registration.requestCount++;
+			registration.executionCount++;
 			await storage.put('target', { registration, active: reservation });
 			return { kind: 'allowed', hostKeyFingerprint: registration.hostKeyFingerprint, reservation };
 		});
@@ -106,15 +108,15 @@ export class SshTargetRegistry extends DurableObject {
 	/**
 	 * Dynamically registers or replaces an SSH target with an issued execution token and host key fingerprint.
 	 */
-	async register(hostKeyFingerprint: string, ttlSeconds: number) {
-		const executionToken = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, '0')).join('');
-		const digest = await tokenDigest(executionToken);
+	async register(hostKeyFingerprint: string, ttlSeconds: number, delivery: 'direct' | 'claim' = 'direct') {
+		const credential = randomToken();
+		const digest = await tokenDigest(credential);
 		const now = Date.now();
 		const registration: Registration = {
 			registrationId: crypto.randomUUID(),
 			hostKeyFingerprint,
 			expiresAt: now + ttlSeconds * 1000,
-			tokenDigest: digest,
+			...(delivery === 'claim' ? { claimDigest: digest } : { tokenDigest: digest, executionCount: 0 }),
 			windowStartedAt: now,
 			requestCount: 0,
 		};
@@ -122,7 +124,29 @@ export class SshTargetRegistry extends DurableObject {
 			const target = await storage.get<TargetRecord>('target');
 			await this.save(storage, { registration, active: target?.active });
 		});
-		return { executionToken, registrationId: registration.registrationId, expiresAt: registration.expiresAt };
+		return { credential, registrationId: registration.registrationId, expiresAt: registration.expiresAt };
+	}
+
+	/** Exchanges a provisioned claim once, without changing the registration's expiry or fingerprint. */
+	async claim(claimCode: string) {
+		const claimDigest = await tokenDigest(claimCode);
+		const executionToken = randomToken();
+		const digest = await tokenDigest(executionToken);
+
+		return this.ctx.storage.transaction(async (storage) => {
+			const target = await storage.get<TargetRecord>('target');
+			const registration = target?.registration;
+			if (!registration?.claimDigest || registration.expiresAt <= Date.now() ||
+				!crypto.subtle.timingSafeEqual(claimDigest, registration.claimDigest)) {
+				return null;
+			}
+
+			delete registration.claimDigest;
+			registration.tokenDigest = digest;
+			registration.executionCount = 0;
+			await storage.put('target', { registration, active: target?.active });
+			return { executionToken, expiresAt: registration.expiresAt };
+		});
 	}
 
 	/**
