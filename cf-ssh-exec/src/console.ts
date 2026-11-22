@@ -1,8 +1,8 @@
 /**
  * @fileoverview Serves the minimal web console landing page.
  *
- * Provides a clean browser context for ScriptCat / Tampermonkey user scripts to mount
- * execution menus and perform interactive remote SSH commands.
+ * Provides a clean browser context for ScriptCat / Tampermonkey userscripts to mount
+ * interactive menus and test remote SSH command execution.
  */
 
 const page = `<!doctype html>
@@ -103,9 +103,9 @@ const page = `<!doctype html>
       <span class="badge"><span class="dot"></span> Online</span>
       <h1>Worker SSH 控制台</h1>
     </div>
-    <p>当前 Cloudflare Worker 运行状态正常，可作为脚本猫或油猴插件的用户交互宿主页面。</p>
+    <p>当前 Cloudflare Worker SSH 网关运行正常，可直接在脚本猫 / 油猴插件中配置网关地址与 <code>SSH_API_KEY</code> 调用，或将此页作为调试宿主页面。</p>
     <div class="instructions">
-      💡 <strong>使用提示：</strong>请点击浏览器右上角脚本猫扩展图标，在菜单中选择<strong>「执行 SSH 命令」</strong>即可弹出交互面板。
+      💡 <strong>调试提示：</strong>点击浏览器右上角脚本猫扩展图标，在菜单中选择<strong>「执行 SSH 命令」</strong>即可弹出交互面板测试连接。
     </div>
   </main>
 </body>

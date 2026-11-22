@@ -6,16 +6,8 @@
     "enabled": true
   },
   "secrets": {
-    "required": ["SSH_TARGET_ADMIN_TOKEN"]
+    "required": ["SSH_API_KEY"]
   },
-  "durable_objects": {
-    "bindings": [
-      { "name": "SSH_TARGET_REGISTRY", "class_name": "SshTargetRegistry" }
-    ]
-  },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["SshTargetRegistry"] }
-  ],
   "ratelimits": [
     {
       "name": "SSH_RATE_LIMITER",

@@ -1,21 +1,22 @@
 /**
- * @fileoverview Low-level SSH client executor utilizing cloudflare:sockets and @workeryard/undershell.
+ * @fileoverview Low-level SSHv2 client executor utilizing `cloudflare:sockets` and `@workeryard/undershell`.
  *
- * Handles raw TCP socket dialing, SSH handshake, host key verification, password authentication,
- * non-interactive remote command spawning, output stream buffering with truncation caps, and clean teardown.
+ * Handles raw TCP socket dialing, SSH handshake, optional host key fingerprint pinning,
+ * password authentication, non-interactive remote command spawning, bounded output stream
+ * buffering, and deterministic socket teardown on timeout or client disconnect.
  */
 
 import { AuthenticationError, SshClient } from '@workeryard/undershell';
 import { connect } from 'cloudflare:sockets';
 
 /**
- * Target host connection specification and security constraints.
+ * Target host connection specification.
  */
 export type SshTarget = {
 	dialHost: string;
 	port: number;
 	username: string;
-	hostKeyFingerprint: string;
+	hostKeyFingerprint?: string;
 };
 
 type Interrupted = 'timeout' | 'cancelled' | 'output_limit';
@@ -34,18 +35,18 @@ export type ExecResult = {
 	truncated: boolean;
 };
 
-// Maximum retained output bytes per stream (32 KiB)
-const MAX_RETAINED = 32 * 1024;
-// Maximum combined output limit across stdout and stderr (128 KiB)
-const MAX_TOTAL = 128 * 1024;
+/** Maximum retained output bytes per stream (32 KiB). */
+export const MAX_RETAINED_BYTES = 32 * 1024;
+/** Maximum combined output limit across stdout and stderr (128 KiB). */
+export const MAX_TOTAL_BYTES = 128 * 1024;
 
 /**
  * In-memory buffer accumulator for stdout and stderr streams with strict ceiling enforcement.
  */
 class CommandOutput {
 	private readonly buffers = {
-		stdout: new Uint8Array(MAX_RETAINED),
-		stderr: new Uint8Array(MAX_RETAINED),
+		stdout: new Uint8Array(MAX_RETAINED_BYTES),
+		stderr: new Uint8Array(MAX_RETAINED_BYTES),
 	};
 	private readonly lengths = { stdout: 0, stderr: 0 };
 	private received = 0;
@@ -54,13 +55,13 @@ class CommandOutput {
 	/**
 	 * Appends incoming stream chunks while respecting per-stream and total size limits.
 	 *
-	 * @param name Output stream identifier ('stdout' | 'stderr').
+	 * @param name Output stream identifier (`'stdout'` | `'stderr'`).
 	 * @param bytes Incoming chunk buffer.
-	 * @returns True if chunk was fully accepted within total output quota; false if quota breached.
+	 * @returns `true` if chunk was accepted within total output quota; `false` if total quota breached.
 	 */
 	append(name: OutputName, bytes: Uint8Array): boolean {
-		const accepted = Math.min(bytes.byteLength, MAX_TOTAL - this.received);
-		const keep = Math.min(accepted, MAX_RETAINED - this.lengths[name]);
+		const accepted = Math.min(bytes.byteLength, MAX_TOTAL_BYTES - this.received);
+		const keep = Math.min(accepted, MAX_RETAINED_BYTES - this.lengths[name]);
 		this.buffers[name].set(bytes.subarray(0, keep), this.lengths[name]);
 		this.lengths[name] += keep;
 		this.received += accepted;
@@ -84,10 +85,10 @@ class CommandOutput {
 /**
  * Executes a remote non-interactive command over SSH against a target host.
  *
- * Employs a multi-way race (Promise.race) between command execution, wall-clock timeout,
- * and incoming client abort signals to ensure timely responses and deterministic socket teardown.
+ * Employs a multi-way race (`Promise.race`) between command execution, wall-clock timeout,
+ * and incoming client abort signals to guarantee timely responses and zero leaked sockets.
  *
- * @param target Destination server configuration including dial host and host key fingerprint.
+ * @param target Destination server configuration including dial host and optional host key fingerprint.
  * @param password SSH password credential.
  * @param command Shell command string to execute.
  * @param timeoutMs Maximum allowed execution duration in milliseconds.
@@ -101,7 +102,6 @@ export async function executeSsh(
 	timeoutMs: number,
 	requestSignal: AbortSignal,
 ): Promise<ExecResult> {
-	// Fast path: cancel immediately if the client has already disconnected
 	if (requestSignal.aborted) {
 		return { kind: 'cancelled', stdout: '', stderr: '', exitCode: null, truncated: false };
 	}
@@ -145,11 +145,9 @@ export async function executeSsh(
 	const timer = setTimeout(() => interrupt('timeout'), timeoutMs);
 
 	try {
-		// Initiate outbound TCP socket connection via Cloudflare Workers runtime
 		const socket = connect({ hostname: target.dialHost, port: target.port });
 		void socket.closed.catch(() => {});
 
-		// Ensure socket closure is idempotent and ignores already-closed exceptions
 		let closing: Promise<void> | undefined;
 		closeSocket = () => (closing ??= socket.close().catch(() => {}));
 
@@ -157,28 +155,25 @@ export async function executeSsh(
 			await socket.opened;
 			if (interruption) return interruption;
 
-			// Perform SSH handshake, verify host key fingerprint, and authenticate
+			const hostKeyPolicy = target.hostKeyFingerprint
+				? { hostKeyFingerprint: target.hostKeyFingerprint }
+				: { verifyHostKey: () => true };
+
 			const client = await SshClient.connect({
 				socket: { readable: socket.readable, writable: socket.writable, close: closeSocket },
 				username: target.username,
 				auth: { kind: 'password', password },
-				hostKeyFingerprint: target.hostKeyFingerprint,
-				algorithms: {
-					hostKey: ['ssh-ed25519'],
-					kex: ['curve25519-sha256', 'curve25519-sha256@libssh.org'],
-				},
+				...hostKeyPolicy,
 			});
 			if (interruption) return interruption;
 			authenticated = true;
 
-			// Spawn non-interactive command channel
 			const session = await client.spawn(command, { pty: false });
 			if (interruption) return interruption;
 
 			const [, , , exit] = await Promise.all([
 				drain('stdout', session.stdout),
 				drain('stderr', session.stderr),
-				// A fast command may close its channel before stdin EOF can be sent.
 				session.stdin.close().catch(() => {}),
 				session.exit,
 			]);
@@ -195,10 +190,8 @@ export async function executeSsh(
 		if (error instanceof AuthenticationError) return result('auth_failed');
 		return result(authenticated ? 'exec_failed' : 'connection_failed');
 	} finally {
-		// Unconditionally reclaim timer, event listener, and underlying network socket
 		clearTimeout(timer);
 		requestSignal.removeEventListener('abort', onAbort);
-		// Socket shutdown can wait for a pending TCP dial.
 		void closeSocket?.();
 	}
 }

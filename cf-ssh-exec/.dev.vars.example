@@ -1,4 +1,6 @@
 # Cloudflare Worker Local Development Secrets
-# Copy this file to .dev.vars and replace with your own 64-character hex secret:
-# Generate with: openssl rand -hex 32
-SSH_TARGET_ADMIN_TOKEN=0000000000000000000000000000000000000000000000000000000000000000
+# Copy this file to .dev.vars and replace with your own API key (16-512 printable ASCII chars):
+# You can generate a 64-char hex secret via: openssl rand -hex 32
+SSH_API_KEY=0000000000000000000000000000000000000000000000000000000000000000
+# Optional comma-separated public IPv4 CIDR allowlist:
+# ALLOWED_HOST_CIDRS=47.99.0.0/16,120.55.0.0/16
