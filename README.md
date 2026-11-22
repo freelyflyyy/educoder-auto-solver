@@ -94,6 +94,14 @@
 
 ---
 
+## 配套远程 SSH 网关（`cf-ssh-exec`）
+
+浏览器脚本受沙箱限制无法直接发原始 TCP 连接。针对需要连接公网 SSH 实验机的场景，仓库内置了 [cf-ssh-exec](cf-ssh-exec/README.md) 子项目，配置一个 `SSH_API_KEY` 即可一键部署到 Cloudflare Workers 免费版，供脚本通过 HTTP 接口远程执行 SSH 命令。
+
+详见：**[cf-ssh-exec 部署与使用说明](cf-ssh-exec/README.md)**
+
+---
+
 ## 免责声明
 
 * 本项目仅用于 **Web 前端逆向技术研究、API 协议安全分析以及自动化测试交流**。

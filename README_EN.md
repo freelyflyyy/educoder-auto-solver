@@ -94,6 +94,14 @@ Open **Settings** at the top of the panel to customize execution parameters:
 
 ---
 
+## Companion Remote SSH Gateway (`cf-ssh-exec`)
+
+Because browser scripts cannot open raw TCP sockets directly, this repository includes [cf-ssh-exec](cf-ssh-exec/README_EN.md) for challenges that require connecting to public SSH lab instances. Set an `SSH_API_KEY` to deploy it on the Cloudflare Workers Free plan and execute SSH commands over HTTP.
+
+See the **[cf-ssh-exec Documentation](cf-ssh-exec/README_EN.md)** for deployment and usage details.
+
+---
+
 ## Disclaimer
 
 * This project is developed strictly for **academic research, protocol analysis, and automated testing education**.

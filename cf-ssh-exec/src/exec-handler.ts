@@ -1,86 +1,66 @@
 /**
- * @fileoverview Main execution handler orchestrating rate-limiting, admission, and SSH execution.
+ * @fileoverview Orchestration handler for `POST /v1/ssh/exec`.
  *
- * Implements ingress rate limiting per client IP, acquires concurrency reservations
- * from the target registry Durable Object, executes SSH commands, maps domain errors to HTTP statuses,
- * and asynchronously releases reservations via execution context waitUntil.
+ * Coordinates mandatory API key verification, per-IP rate limiting, request payload validation,
+ * anti-SSRF target policy enforcement, and remote SSH command execution.
  */
 
+import { verifyApiKey } from './auth';
 import { parseExecRequest } from './exec-request';
-import { bearerToken, type Reply } from './http';
-import { checkIngress } from './ingress';
-import { executeSsh } from './ssh-exec';
-import { targetKey } from './target-address';
+import type { Reply } from './http';
+import { checkIngressRateLimit } from './rate-limit';
+import { executeSsh, type ExecKind } from './ssh-exec';
+import { isAllowedTargetHost } from './target-policy';
 
-type ExecBindings = Pick<Env, 'SSH_RATE_LIMITER' | 'SSH_TARGET_REGISTRY'>;
+export type ExecBindings = {
+	SSH_API_KEY?: string;
+	SSH_RATE_LIMITER?: RateLimit;
+	ALLOWED_HOST_CIDRS?: string;
+};
 
-const SSH_ERRORS = {
+const SSH_ERRORS: Record<Exclude<ExecKind, 'completed'>, readonly [status: number, code: string]> = {
 	timeout: [504, 'SSH_TIMEOUT'],
 	cancelled: [499, 'REQUEST_CANCELLED'],
 	auth_failed: [502, 'SSH_AUTH_FAILED'],
 	connection_failed: [502, 'SSH_CONNECTION_FAILED'],
 	exec_failed: [502, 'SSH_EXEC_FAILED'],
 	output_limit: [502, 'OUTPUT_LIMIT_EXCEEDED'],
-} as const;
+};
 
 /**
- * Handles incoming POST /v1/ssh/exec requests.
- *
- * @param request Incoming HTTP request.
- * @param env Environment bindings including rate-limiter and Durable Object registry.
- * @param reply Standardized response helper.
- * @param ctx ExecutionContext for scheduling asynchronous background tasks.
- * @returns JSON response with command output, execution metrics, or mapped error.
+ * Handles `POST /v1/ssh/exec` requests through a deterministic pipeline:
+ * 1. API Key authentication (`SSH_API_KEY`)
+ * 2. Edge IP rate limiting (`SSH_RATE_LIMITER`)
+ * 3. JSON body & schema validation
+ * 4. Anti-SSRF public IPv4 & CIDR allowlist check (`ALLOWED_HOST_CIDRS`)
+ * 5. Direct SSH execution over `cloudflare:sockets`
  */
-export async function handleExec(request: Request, env: ExecBindings, reply: Reply, ctx: ExecutionContext): Promise<Response> {
-	const token = bearerToken(request);
-	if (!token) return reply.unauthorized();
+export async function handleExec(request: Request, env: ExecBindings, reply: Reply): Promise<Response> {
+	const auth = await verifyApiKey(request, env.SSH_API_KEY);
+	if (auth === 'unauthorized') return reply.unauthorized();
+	if (auth === 'unconfigured') return reply.error(503, 'AUTH_NOT_CONFIGURED');
 
-	const rejected = await checkIngress(request, env.SSH_RATE_LIMITER, reply, 'ingress');
-	if (rejected) return rejected;
+	const rateLimit = await checkIngressRateLimit(request, env.SSH_RATE_LIMITER);
+	if (!rateLimit.ok) return reply.error(rateLimit.status, rateLimit.code, rateLimit.headers);
 
 	const parsed = await parseExecRequest(request);
-	if (!parsed.ok) return reply.error(parsed.status, parsed.code);
-	const key = targetKey(parsed.value);
-	if (!key) return reply.error(403, 'TARGET_NOT_ALLOWED');
+	if (!parsed.ok) return reply.error(parsed.status, parsed.code, parsed.headers);
 
-	const { host, port, username, password, command, timeoutMs } = parsed.value;
-	let registry;
-	let admission;
-
-	// Acquire concurrency reservation and verify execution token from the target's Durable Object
-	try {
-		registry = env.SSH_TARGET_REGISTRY.getByName(key);
-		admission = await registry.acquire(token, timeoutMs);
-	} catch {
-		return reply.error(503, 'TARGET_REGISTRY_UNAVAILABLE');
+	const { host, port, username, password, command, timeoutMs, hostKeyFingerprint } = parsed.value;
+	if (!isAllowedTargetHost(host, env.ALLOWED_HOST_CIDRS)) {
+		return reply.error(403, 'TARGET_NOT_ALLOWED');
 	}
 
-	if (admission.kind === 'denied') return reply.error(403, 'TARGET_NOT_ALLOWED');
-	if (admission.kind === 'token_exhausted') return reply.error(429, 'TOKEN_QUOTA_EXHAUSTED');
-	if (admission.kind !== 'allowed') {
-		const code = admission.kind === 'busy' ? 'TARGET_BUSY' : 'RATE_LIMITED';
-		return reply.error(429, code, { 'Retry-After': String(admission.retryAfter) });
+	const target = hostKeyFingerprint
+		? { dialHost: host, port, username, hostKeyFingerprint }
+		: { dialHost: host, port, username };
+
+	const { kind, ...output } = await executeSsh(target, password, command, timeoutMs, request.signal);
+	if (kind === 'completed') {
+		const missingExit = output.exitCode === null && !output.exitSignal;
+		return reply.json(200, { ...output, ...(missingExit ? { status: 'exit_status_missing' } : {}) });
 	}
 
-	const { hostKeyFingerprint, reservation } = admission;
-	try {
-		// Calculate remaining time against reservation expiration window
-		const remaining = Math.min(timeoutMs, reservation.expiresAt - Date.now());
-		if (remaining <= 0) return reply.error(504, 'SSH_TIMEOUT');
-
-		const target = { dialHost: host, port, username, hostKeyFingerprint };
-		const { kind, ...output } = await executeSsh(target, password, command, remaining, request.signal);
-
-		if (kind === 'completed') {
-			const missingExit = output.exitCode === null && !output.exitSignal;
-			return reply.json(200, { ...output, ...(missingExit ? { status: 'exit_status_missing' } : {}) });
-		}
-
-		const [status, code] = SSH_ERRORS[kind];
-		return reply.json(status, { ...output, error: { code } });
-	} finally {
-		// Non-blocking asynchronous reservation release in background execution context
-		ctx.waitUntil(registry.release(reservation.id).catch(() => {}));
-	}
+	const [status, code] = SSH_ERRORS[kind];
+	return reply.json(status, { ...output, error: { code } });
 }
