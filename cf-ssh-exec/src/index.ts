@@ -8,6 +8,7 @@
 import { consolePage } from './console';
 import { handleExec } from './exec-handler';
 import { createReply, type Reply } from './http';
+import { handleLease } from './lease-handler';
 import { handleTargetAdmin } from './target-admin';
 
 export { SshTargetRegistry } from './target-registry';
@@ -19,6 +20,7 @@ type Route = {
 
 const routes = new Map<string, Route>([
 	['/v1/ssh/exec', { methods: ['POST'], handle: handleExec }],
+	['/v1/ssh/lease', { methods: ['POST'], handle: handleLease }],
 	['/v1/ssh/targets', { methods: ['PUT', 'DELETE'], handle: handleTargetAdmin }],
 ]);
 

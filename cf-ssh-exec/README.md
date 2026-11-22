@@ -9,7 +9,7 @@
 [English](README_EN.md) | [简体中文](README.md)
 
 [![Version](https://img.shields.io/badge/Version-1.0.0-blue.svg)]()
-[![Deploy to Cloudflare Workers](https://img.shields.io/badge/Deploy%20to-Cloudflare%20Workers-F38020.svg?logo=cloudflare&logoColor=white)](https://deploy.workers.cloudflare.com/?url=https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec)
+[![Deploy Guide](https://img.shields.io/badge/Deploy%20to-Cloudflare%20Workers-F38020.svg?logo=cloudflare&logoColor=white)](#部署指南cloudflare-workers)
 [![Platform](https://img.shields.io/badge/Platform-Cloudflare%20Workers%20%7C%20Durable%20Objects-orange.svg)](https://developers.cloudflare.com/workers/)
 [![Protocol](https://img.shields.io/badge/Protocol-Raw%20TCP%20%7C%20SSHv2%20%7C%20RFC%204254-green.svg)](https://www.rfc-editor.org/rfc/rfc4254)
 [![License](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
@@ -41,35 +41,35 @@
 
 ---
 
-## 一键部署（Cloudflare Workers）
+## 部署指南（Cloudflare Workers）
 
-> [!NOTE]
-> Cloudflare 的官方部署向导（Deploy with Workers）需要配置 GitHub 构建授权。如果你不是本仓库作者（没有直接写入权限），请先点击右上角 **Fork** 将本仓库复制至你的个人 GitHub 账号，再将下方链接中的用户名替换为你的 GitHub 用户名进行部署。
+本项目位于单体仓库的 `cf-ssh-exec` 子目录下。为确保构建容器能正确识别工作目录，推荐采用 **Cloudflare 官方控制台 Git 直连** 或 **Wrangler 本地一键部署**。
 
-### 方式一：官方一键自动化部署（推荐）
+### 方式一：Cloudflare 控制台 Git 直连部署（零命令行，全自动 CI/CD）
 
-👉 **[点击直接一键部署到 Cloudflare Workers](https://deploy.workers.cloudflare.com/?url=https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec)**
+通过 Cloudflare 网页后台绑定 GitHub 仓库，实现代码推送自动构建上线：
 
-```text
-https://deploy.workers.cloudflare.com/?url=https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec
-```
-
-#### 操作指引步骤：
-1. 点击上方的一键部署链接进入 Cloudflare 官方部署向导。
-2. 登录你的 Cloudflare 账号并授权连接 GitHub，Cloudflare 将全自动拉取依赖、编译代码并完成全球边缘分发。
-3. **绑定管理员密钥（必选）**：
-   * 部署完成后，在 Cloudflare 控制台打开刚刚建好的 Worker（`cf-ssh-exec`）；
-   * 转到 **Settings（设置）** ➔ **Variables and Secrets（变量和机密）** ➔ **Secrets** 栏目；
-   * 点击 **Add（添加）** 绑定服务启动必选机密：
-     * **变量名**：`SSH_TARGET_ADMIN_TOKEN`
-     * **取值**：在本地终端运行 `openssl rand -hex 32` 生成的 64 位随机十六进制字符串。
-4. 点击保存部署，你的安全 SSH 代理网关即刻正式投入运行！
+1. **登录仪表盘**：访问 [Cloudflare Dashboard](https://dash.cloudflare.com/) ➔ 进入 **Workers & Pages** ➔ 点击 **Create Application**；
+2. **连接代码库**：切换到 **Workers** 标签，点击 **Connect to Git** 授权并选择本仓库（`educoder-auto-solver`）；
+3. **配置构建参数（核心步骤）**：
+   * **生产分支（Production branch）**：选择 `main`（或你当前开发的分支）；
+   * **根目录（Root directory）**：**填入 `cf-ssh-exec`**（确保 Cloudflare 自动进入子目录打包，避免报找不到配置文件的错误）；
+   * **构建命令（Build command）**：填入 `npm ci`；
+   * **部署命令（Deploy command）**：保持默认 `npx wrangler deploy`；
+   * **构建监视路径（Build watch paths）**：在「包括路径」中填入 `cf-ssh-exec/**`（仅当该子目录有改动时才触发部署，避免根目录更新浪费构建次数）。
+4. **配置运行时密钥（必选）**：
+   * 保存部署后，进入该 Worker 的 **Settings（设置）** ➔ **Variables and Secrets（变量和机密）**；
+   * 在 **运行时变量和密钥（Runtime variables and secrets）** 区域点击 **+ 添加变量**：
+     * **类型**：选择 **密钥（Secret / 加密）**；
+     * **名称**：`SSH_TARGET_ADMIN_TOKEN`；
+     * **值**：在本地终端运行 `openssl rand -hex 32` 生成的 64 位随机十六进制字符串。
+   * 点击保存。后续只要向目标分支 `git push`，云端就会全自动完成持续部署！
 
 ---
 
 ### 方式二：使用 Wrangler CLI 命令行本地部署
 
-如果你习惯本地终端开发，或需要将服务集成至已有的自动化 CI/CD 流程：
+如果你习惯本地终端开发，或需要将服务集成至已有的自动化脚本中：
 
 #### 1. 安装依赖
 ```sh
@@ -82,7 +82,7 @@ npm ci
 ```sh
 openssl rand -hex 32
 ```
-将生成的值填入本地 `.dev.vars` 文件中：
+将生成的值填入本地 `.dev.vars` 文件中（可直接参考 `.dev.vars.example`）：
 ```ini
 SSH_TARGET_ADMIN_TOKEN=填入你的64位十六进制密钥
 ```
@@ -99,7 +99,7 @@ npx wrangler login
 # 向云端安全存入管理密钥
 npx wrangler secret put SSH_TARGET_ADMIN_TOKEN
 
-# 部署上线
+# 一键部署上线
 npm run deploy
 ```
 

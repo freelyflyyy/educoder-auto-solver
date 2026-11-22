@@ -8,6 +8,7 @@ vi.mock("../src/ssh-exec", () => ({ executeSsh: vi.fn() }));
 
 const execUrl = "https://worker.example.test/v1/ssh/exec";
 const registryUrl = new URL("/v1/ssh/targets", execUrl);
+const leaseUrl = new URL("/v1/ssh/lease", execUrl);
 const address = { host: execPayload.host, port: execPayload.port, username: execPayload.username };
 
 function manage(method: "PUT" | "DELETE", body: Record<string, unknown>, token = testAdminToken) {
@@ -45,11 +46,87 @@ function post(body = JSON.stringify(execPayload), token = executionToken) {
 	});
 }
 
+function claim(token?: string, target = address, referer?: string) {
+	return SELF.fetch(leaseUrl, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			...(token ? { Authorization: "Bearer " + token } : {}),
+			...(referer ? { Referer: referer } : {}),
+		},
+		body: JSON.stringify(target),
+	});
+}
+
+async function registerClaim() {
+	const response = await register({ delivery: "claim" });
+	expect(response.status).toBe(200);
+	const result = await response.json<{ claimCode: string; registrationId: string; expiresAt: number; executionToken?: string }>();
+	expect(result.claimCode).toMatch(/^[a-f0-9]{64}$/);
+	expect(result.executionToken).toBeUndefined();
+	return result;
+}
+
 beforeEach(async () => {
 	executionToken = (await (await register()).json<Registration>()).executionToken;
 	expect(executionToken).toMatch(/^[a-f0-9]{64}$/);
 	execute.mockReset();
 	execute.mockResolvedValue(completed);
+});
+
+it("来源标头和地址无法代替管理端的领取凭证", async () => {
+	const referer = "https://trusted-platform.example.test/session";
+	expect((await claim(undefined, address, referer)).status).toBe(401);
+	expect((await claim("b".repeat(64), address, referer)).status).toBe(403);
+	expect((await claim(executionToken)).status).toBe(403);
+	expect(execute).not.toHaveBeenCalled();
+});
+
+it("领取凭证只绑定登记的目标，且不能直接发起 SSH", async () => {
+	const { claimCode, expiresAt } = await registerClaim();
+	expect((await claim(claimCode, { ...address, port: address.port + 1 })).status).toBe(403);
+	expect((await SELF.fetch(post(undefined, claimCode))).status).toBe(403);
+	const response = await claim(claimCode);
+	expect(response.status).toBe(200);
+	expect(response.headers.get("Cache-Control")).toBe("no-store");
+	expect(await response.json()).toMatchObject({ executionToken: expect.stringMatching(/^[a-f0-9]{64}$/), expiresAt });
+	expect(execute).not.toHaveBeenCalled();
+});
+
+it("并发只领取一次，同一个执行 Token 可在上一次执行结束后继续使用", async () => {
+	const { claimCode } = await registerClaim();
+	const claims = await Promise.all([claim(claimCode), claim(claimCode)]);
+	expect(claims.map((response) => response.status).sort()).toEqual([200, 403]);
+	const accepted = claims.find((response) => response.status === 200)!;
+	const lease = await accepted.json<{ executionToken: string }>();
+	const entered = Promise.withResolvers<void>();
+	const running = Promise.withResolvers<typeof completed>();
+	execute.mockImplementationOnce(() => {
+		entered.resolve();
+		return running.promise;
+	});
+	const context = createExecutionContext();
+	const first = worker.fetch(post(undefined, lease.executionToken), env, context);
+	try {
+		await entered.promise;
+		const blocked = await SELF.fetch(post(undefined, lease.executionToken));
+		expect(blocked.status).toBe(429);
+		expect(await blocked.json()).toMatchObject({ error: { code: "TARGET_BUSY" } });
+	} finally {
+		running.resolve(completed);
+		expect((await first).status).toBe(200);
+		await waitOnExecutionContext(context);
+	}
+	expect((await SELF.fetch(post(undefined, lease.executionToken))).status).toBe(200);
+	expect(execute).toHaveBeenCalledTimes(2);
+});
+
+it("撤销登记会让已经领取的执行租约失效", async () => {
+	const { claimCode, registrationId } = await registerClaim();
+	const lease = await (await claim(claimCode)).json<{ executionToken: string }>();
+	expect((await manage("DELETE", { ...address, registrationId })).status).toBe(200);
+	expect((await SELF.fetch(post(undefined, lease.executionToken))).status).toBe(403);
+	expect(execute).not.toHaveBeenCalled();
 });
 
 it("返回独立的两路输出和非零退出状态，并使用登记的连接信息", async () => {
@@ -168,7 +245,9 @@ it("撤销最新登记后立即拒绝执行，旧登记 ID 不会撤销新记录
 	expect(execute).not.toHaveBeenCalled();
 });
 
-it("过期记录即使尚未由定时清理删除也无法拨号", async () => {
+it.each(["direct", "claim", "lease"] as const)("过期记录即使尚未清理也无法使用凭证 (%s)", async (delivery) => {
+	const claimCode = delivery === "direct" ? undefined : (await registerClaim()).claimCode;
+	const lease = delivery === "lease" ? await (await claim(claimCode)).json<{ executionToken: string }>() : undefined;
 	const name = JSON.stringify([address.host, address.port, address.username]);
 	await runInDurableObject(env.SSH_TARGET_REGISTRY.getByName(name), async (_instance, state) => {
 		const existing = await state.storage.get<{ registration: { expiresAt: number } }>("target");
@@ -176,7 +255,8 @@ it("过期记录即使尚未由定时清理删除也无法拨号", async () => {
 		existing.registration.expiresAt = Date.now() - 1000;
 		await state.storage.put("target", existing);
 	});
-	expect((await SELF.fetch(post())).status).toBe(403);
+	const response = delivery === "claim" ? await claim(claimCode) : await SELF.fetch(post(undefined, lease?.executionToken));
+	expect(response.status).toBe(403);
 	expect(execute).not.toHaveBeenCalled();
 });
 
@@ -235,6 +315,44 @@ it("每个目标登记单独计算执行配额", async () => {
 	const { executionToken: otherToken } = await (await register(other)).json<Registration>();
 	expect((await SELF.fetch(post(JSON.stringify({ ...execPayload, ...other }), otherToken))).status).toBe(200);
 	expect(execute).toHaveBeenCalledTimes(11);
+});
+
+it.each(["direct", "lease"] as const)("每个执行 Token 跨分钟累计至 100 次后耗尽 (%s)", async (delivery) => {
+	const token = delivery === "direct" ? executionToken :
+		(await (await claim((await registerClaim()).claimCode)).json<{ executionToken: string }>()).executionToken;
+	const registry = env.SSH_TARGET_REGISTRY.getByName(JSON.stringify([address.host, address.port, address.username]));
+
+	for (let window = 0; window < 10; window++) {
+		await runInDurableObject(registry, async (_instance, state) => {
+			const stored = await state.storage.get<{ registration: { windowStartedAt: number } }>("target");
+			if (!stored) throw new Error("missing registration fixture");
+			stored.registration.windowStartedAt = Date.now() - 60_001;
+			await state.storage.put("target", stored);
+		});
+		for (let count = 0; count < 10; count++) {
+			const result = await registry.acquire(token, 20_000);
+			if (result.kind !== "allowed") throw new Error(`unexpected admission ${result.kind}`);
+			await registry.release(result.reservation.id);
+		}
+	}
+
+	const blocked = await SELF.fetch(post(undefined, token));
+	expect(blocked.status).toBe(429);
+	expect(blocked.headers.has("Retry-After")).toBe(false);
+	expect(await blocked.json()).toMatchObject({ error: { code: "TOKEN_QUOTA_EXHAUSTED" } });
+	expect(execute).not.toHaveBeenCalled();
+});
+
+it("升级前未记录总用量的执行 Token 必须重新签发", async () => {
+	const registry = env.SSH_TARGET_REGISTRY.getByName(JSON.stringify([address.host, address.port, address.username]));
+	await runInDurableObject(registry, async (_instance, state) => {
+		const stored = await state.storage.get<{ registration: { executionCount?: number } }>("target");
+		if (!stored) throw new Error("missing registration fixture");
+		delete stored.registration.executionCount;
+		await state.storage.put("target", stored);
+	});
+	expect((await SELF.fetch(post())).status).toBe(403);
+	expect(execute).not.toHaveBeenCalled();
 });
 
 it("重新登记保留正在执行的名额，旧请求迟到释放时不会清除新名额", async () => {

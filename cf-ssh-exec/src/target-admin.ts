@@ -7,7 +7,7 @@
 
 import { bearerToken, readJsonObject, type Reply } from './http';
 import { readTargetAddress, targetKey } from './target-address';
-import { MAX_TARGET_TTL_SECONDS } from './target-registry';
+import { MAX_TARGET_TTL_SECONDS } from './access-policy';
 
 type AdminBindings = Pick<Env, 'SSH_TARGET_ADMIN_TOKEN' | 'SSH_TARGET_REGISTRY'>;
 const encoder = new TextEncoder();
@@ -54,7 +54,8 @@ export async function handleTargetAdmin(request: Request, env: AdminBindings, re
 		}
 
 		// PUT /v1/ssh/targets: register target with host key fingerprint and TTL
-		const { hostKeyFingerprint, ttlSeconds = MAX_TARGET_TTL_SECONDS } = body.value;
+		const { hostKeyFingerprint, ttlSeconds = MAX_TARGET_TTL_SECONDS, delivery = 'direct' } = body.value;
+		if (delivery !== 'direct' && delivery !== 'claim') return reply.error(400, 'INVALID_TARGET_DELIVERY');
 		if (typeof hostKeyFingerprint !== 'string' || !/^SHA256:[A-Za-z0-9+/]{43}$/.test(hostKeyFingerprint)) {
 			return reply.error(400, 'INVALID_HOST_KEY_FINGERPRINT');
 		}
@@ -62,8 +63,10 @@ export async function handleTargetAdmin(request: Request, env: AdminBindings, re
 			return reply.error(400, 'INVALID_TARGET_TTL');
 		}
 
-		const { executionToken, registrationId, expiresAt } = await env.SSH_TARGET_REGISTRY.getByName(key).register(hostKeyFingerprint, ttlSeconds);
-		return reply.json(200, { executionToken, registrationId, expiresAt });
+		const { credential, registrationId, expiresAt } = await env.SSH_TARGET_REGISTRY.getByName(key)
+			.register(hostKeyFingerprint, ttlSeconds, delivery);
+		const secret = delivery === 'claim' ? { claimCode: credential } : { executionToken: credential };
+		return reply.json(200, { ...secret, registrationId, expiresAt });
 	} catch {
 		return reply.error(503, 'TARGET_REGISTRY_UNAVAILABLE');
 	}

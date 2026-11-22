@@ -8,6 +8,7 @@
 
 import { parseExecRequest } from './exec-request';
 import { bearerToken, type Reply } from './http';
+import { checkIngress } from './ingress';
 import { executeSsh } from './ssh-exec';
 import { targetKey } from './target-address';
 
@@ -35,14 +36,8 @@ export async function handleExec(request: Request, env: ExecBindings, reply: Rep
 	const token = bearerToken(request);
 	if (!token) return reply.unauthorized();
 
-	// Ingress rate limiting per client IP (120 requests/minute)
-	try {
-		const clientAddress = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-		const limit = await env.SSH_RATE_LIMITER.limit({ key: `ingress:${clientAddress}` });
-		if (!limit.success) return reply.error(429, 'INGRESS_RATE_LIMITED', { 'Retry-After': '60' });
-	} catch {
-		return reply.error(503, 'RATE_LIMIT_UNAVAILABLE');
-	}
+	const rejected = await checkIngress(request, env.SSH_RATE_LIMITER, reply, 'ingress');
+	if (rejected) return rejected;
 
 	const parsed = await parseExecRequest(request);
 	if (!parsed.ok) return reply.error(parsed.status, parsed.code);
@@ -62,6 +57,7 @@ export async function handleExec(request: Request, env: ExecBindings, reply: Rep
 	}
 
 	if (admission.kind === 'denied') return reply.error(403, 'TARGET_NOT_ALLOWED');
+	if (admission.kind === 'token_exhausted') return reply.error(429, 'TOKEN_QUOTA_EXHAUSTED');
 	if (admission.kind !== 'allowed') {
 		const code = admission.kind === 'busy' ? 'TARGET_BUSY' : 'RATE_LIMITED';
 		return reply.error(429, code, { 'Retry-After': String(admission.retryAfter) });
