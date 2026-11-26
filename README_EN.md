@@ -28,25 +28,25 @@ If you are frustrated with Educoder's sluggish page transitions and endless manu
 * **Pure API Protocol Architecture (Zero DOM Jumps)**  
   Completely eliminates flaky DOM manipulation, simulated clicking, and frequent page reloads. With a native MD5 request signature generator and complete session management, the script communicates directly with Educoder's backend REST APIs without ever leaving or reloading the page.
 * **Instant Choice Probe**  
-  Bypasses traditional question bank matching entirely. By exploiting protocol-level validation probes, the script dynamically extracts standard answers directly from the server response with 100% precision for both single and multiple-choice questions.
-* **Grading-First Solving Strategy**  
-  Educoder delivers actual evaluation scripts alongside tasks. The script extracts native data before resorting to LLM generation:
-  * **Fill-in-the-blanks**: Reads `evaluate.py` directly from the task repository, extracting `s == "…"` literal assertions to achieve instant 100% passes.
-  * **Three-Tier Hierarchy for Code Tasks**: **Reference Answers ➔ Testcase Table Mapping ➔ AI Fallback Generation**.
-  * **Token Preservation (`aiFallback`)**: Native answers and visible test suites take precedence. AI models are only invoked when no answers or public testcases are available and the `aiFallback` toggle is enabled.
+  Bypasses traditional question bank matching entirely. By exploiting protocol-level validation probes, the script dynamically extracts standard answers directly from the server response with 100% precision for both single and multiple-choice questions — and skips the second submission altogether when the probe placeholder already matches.
+* **Grading-First 4-Tier Solving Strategy**  
+  Educoder delivers evaluation assets alongside tasks. The script concurrently gathers grading intelligence and prioritizes native data before resorting to LLM generation:
+  1. **Evaluation Script Literal Extraction (Fill-in-the-blanks)**: Reads `evaluate.py` directly from the task directory, extracting `s == "…"` literal assertions to achieve instant passes.
+  2. **Reference Answer Direct Submission**: Extracts official reference solutions (`get_answer_info.json`), verifies target language compatibility, and submits directly.
+  3. **Full Testcase Lookup Table**: Fetches all test cases (`check_test_sets.json`, including hidden cases) and synthesizes a deterministic stdin/stdout lookup table for pure I/O tasks.
+  4. **AI Code Fallback (`aiFallback`)**: Invokes the LLM code engine only when none of the above native sources can pass the challenge and the **Enable AI Coding Fallback** toggle is turned on.
 * **AI Code Engine & Anti-Regression (Auto-Heal)**  
   Deeply integrated with DeepSeek (V3 / V4-Pro / R1) and standard OpenAI-compatible endpoints:
-  * **Reasoning Models & Multimodal**: Native compatibility with thinking models. Features strict `image/*` MIME filtering to ignore raw text data files and only feed valid screenshots to vision models.
-  * **Prompt Context Injection**: Evaluation code (`evaluate.py`), hidden test case structures, and string comparison rules are packaged directly into the prompt.
-  * **Anti-Regression Retries**: During failed retries, compiler logs, error diffs, and an explicit list of "passed test cases" are injected to stop the model from breaking already passing inputs.
+  * **Reasoning Models & Concurrent Multimodal**: Native compatibility with thinking models. Strictly filters `image/*` attachments and downloads problem images concurrently for vision models while ignoring raw text data files.
+  * **Unified Template Cache & Prompt Context Injection**: Caches original starter templates across tiers and retries; packages evaluation scripts (`evaluate.py`), hidden test cases, and comparison rules directly into the prompt.
+  * **Snapshot Reuse & Anti-Regression Retries**: Uses evaluation result fingerprints to detect asynchronous grading completion and reuses the latest detail snapshot to eliminate redundant requests. Failed retries inject compiler logs, diffs, and an explicit list of "already passing inputs" to prevent regressions.
 * **Smart Pipeline Runner & Smooth UI**  
-  * **Bidirectional Chain Scanning**: Traces challenges both backward (`prev_game`) and forward (`next_game`) to guarantee zero missed challenges even if post-entry tasks remain locked.
-  * **Animated Scan Progress**: The queue panel renders a centered loading spinner, progress bar, and real-time counter (X/Y homeworks).
-  * **Flicker-Free Rendering**: Uses `requestAnimationFrame` to batch UI updates and automatically clears poll timers when leaving the single-page application.
+  * **Bidirectional Chain Scanning & Route Awareness**: Traverses challenges both backward (`prev_game`) and forward (`next_game`) while automatically refreshing idle state when navigating across SPA routes.
+  * **Refined Material Design 3 Dock**: Features pulsing phase indicators, active homework highlighting, bounded scrollable lists with auto-following logs, and `requestAnimationFrame` batched rendering.
 
 > **Supported Challenge Types**:  
 > ✅ Supported: Multiple-choice questions (single & multiple), text fill-in-the-blanks (with `evaluate.py`), programming tasks (C/C++, Python, Java, etc.).  
-> ⏭️ Automatically Skipped: Graphical virtual desktop environments (StarUML, VNC, Logisim).
+> ⏭️ Automatically Skipped: Graphical virtual desktop environments (StarUML, VNC, Logisim; optional remote SSH gateway parameters can be configured in General Settings).
 
 ---
 
@@ -68,29 +68,29 @@ If you use **[ScriptCat](https://docs.scriptcat.org/)**, install directly from t
 
 ## Usage
 
-1. **Navigate to Educoder**: Log in and visit any course assignment list or challenge page on [Educoder](https://www.educoder.net/).
-2. **Open Panel**: Click the floating purple **assistant icon** in the bottom-right corner to expand the control dock.
-3. **Run Pipeline**:
-   - Click **Scan Challenges**: The script traverses the assignment chain in both directions with an animated progress bar.
-   - Click **Start Solving**: The automated solver will silently progress through the entire queue in the background.
+1. **Navigate to Educoder**: Log in and visit any course assignment list, assignment detail page, or challenge page on [Educoder](https://www.educoder.net/).
+2. **Open Panel**: Click the floating purple **assistant pill** in the bottom-right corner to expand the control panel. The script automatically scans pending assignments and challenges (or click **Rescan** at the top-right of the assignment card anytime).
+3. **Start Solving**: Click **Start Solving** at the bottom of the panel. The automated solver will silently progress through the entire queue in the background without page redirects.
 
 ---
 
-## AI Configuration
+## Settings & AI Configuration
 
 Open **Settings** at the top of the panel to customize execution parameters:
 
-### General Settings
-* **Allow AI fallback when reference/cases are missing (`aiFallback`)**: Recommended on. The script only calls the AI code engine if the platform neither provides reference code nor full public test suites.
+### General Settings (Settings ➔ General Settings)
+* **Startup Delay / Code Auto-Retries / Log History Rows**: Customize the countdown before queue execution, AI auto-retry count on failed evaluations (0–4), and visible log lines.
+* **Enable AI Coding Fallback (`aiFallback`)**: Recommended on. The script always prioritizes native evaluation scripts, reference answers, and full test suites; when enabled, it falls back to the AI code generator only when native answers are unavailable.
+* **Remote SSH Gateway URL & Key (Optional)**: Used only for graphical virtual desktop challenges; leave blank for normal choice, fill-in-the-blank, and coding challenges.
 
-### AI Endpoint Settings (Settings ➔ AI)
+### AI Model Settings (Settings ➔ AI Model)
 | Parameter | Recommended | Description |
 | :--- | :--- | :--- |
-| **Base URL** | `https://api.deepseek.com/v1` | Compatible with any OpenAI-compatible endpoint (OneAPI, Bailian, SiliconFlow, etc.) |
-| **API Key** | `sk-xxxxxx` | Your API secret key (stored locally inside `localStorage`) |
-| **Model** | `deepseek-chat` / `deepseek-v4-pro` | High-speed, high-accuracy coding model; use `deepseek-reasoner` for complex algorithms |
-| **Thinking** | `auto` / `high` | Automatically manages thinking budget for reasoning-enabled models |
-| **Vision** | Toggle as needed | Uploads problem images for vision-capable models |
+| **Base URL** | `https://api.deepseek.com/v1` | Compatible with any OpenAI-compatible endpoint (DeepSeek, Bailian, SiliconFlow, OneAPI, etc.) |
+| **API Key** | `sk-xxxxxx` | Your API secret key (persisted locally in `localStorage`) |
+| **Model** | `deepseek-chat` / `deepseek-v4-pro` | Fast, high-accuracy coding model; use reasoning models for complex algorithms |
+| **Enable Vision** | Toggle as needed | Concurrently downloads and attaches problem images for vision-capable models |
+| **Advanced Parameters** | Default (Auto-adapt) | Fine-tune Max Tokens, Thinking Mode & Level, Sampling / Penalties, JSON Mode, and custom instructions |
 
 ---
 
