@@ -194,7 +194,7 @@ test('AnswerSource & CodeGenerator handle templates, checkers, lookups, and prom
         return '';
       },
       async answerInfo() { return { message: [{ answer_name: '标答', answer_contents: '```python\nprint(1)\n```' }] }; },
-      async checkTestSets() { return { test_sets: [{ input: '1', output: '2' }] }; },
+      async checkTestSets() { return { test_sets: [{ input: '1', output: '2' }, { input: null, output: '11 13 ... 97 ' }] }; },
     },
   });
 
@@ -209,6 +209,7 @@ test('AnswerSource & CodeGenerator handle templates, checkers, lookups, and prom
   const key = { gameId: 'g1', homeworkId: 1 };
   const brief = await source.brief(key, model);
   assert.equal(Object.hasOwn(model, '__brief'), false, 'brief() must not mutate model.__brief');
+  assert.equal(brief.cases.length, 2, 'allCases must preserve output-only cases with input:null');
   const plan = await source.checkerPlan(key, model, brief.checker);
   assert.equal(plan.count, 2);
   assert.equal(plan.content, '序号1：(answerOne)\n序号2：(answerTwo)');
@@ -219,12 +220,17 @@ test('AnswerSource & CodeGenerator handle templates, checkers, lookups, and prom
   });
   assert.deepEqual(gen.readFileMap('```json\n{"a.py":"x"}\n```', false), { 'a.py': 'x' });
   assert.deepEqual({ ...gen.readFileMap('{"a.py":"ok","b.py":"trun', true) }, { 'a.py': 'ok' });
-  const prompt = gen.buildPrompt(model, ['step1/ans.txt'], { 'step1/ans.txt': 'tmpl' }, { brief });
+  const prompt = gen.buildPrompt(model, ['step1/ans.txt'], { 'step1/ans.txt': 'tmpl' }, {
+    brief: { ...brief, reference: { code: 'ref_code()', name: '参考答案' } },
+    previousFiles: { 'step1/ans.txt': 'prev_code()' },
+  });
   assert.ok(prompt.includes('## 本关判分脚本源码'));
   assert.ok(prompt.includes('## 判分用例'));
+  assert.ok(prompt.includes('## 平台参考答案') && prompt.includes('ref_code()'));
+  assert.ok(prompt.includes('## 上一次提交的代码') && prompt.includes('prev_code()'));
 });
 
-test('Evaluator computes signatures, failure feedback, and keeps EvalContext isolated', () => {
+test('Evaluator computes signatures, failure feedback with fallbackCases whitespace visibility, and keeps EvalContext isolated', async () => {
   const evaluator = createEvaluator({ api: {}, answerSource: {} });
   const d1 = { test_sets: [{ result: false, actual_output: 'a', ts_time: 1 }] };
   const d2 = { test_sets: [{ result: false, actual_output: 'b', ts_time: 1 }] };
@@ -235,6 +241,16 @@ test('Evaluator computes signatures, failure feedback, and keeps EvalContext iso
   const ctx2 = createEvalContext();
   ctx1.gradedOnce = true;
   assert.equal(ctx2.gradedOnce, false);
+
+  const failed = await evaluator.failedDetail(
+    { gameId: 'g1', homeworkId: 1 },
+    { lastDetail: { test_sets: [{ position: 1, result: false, input: null, output: null, actual_output: '2 3 97 \n' }] } },
+    null,
+    [{ position: 1, input: null, output: '11 13 97 ' }],
+  );
+  assert.equal(failed.count, 1);
+  assert.ok(failed.sample.includes('"11 13 97 "'));
+  assert.ok(failed.sample.includes('"2 3 97 \\n"'));
 
   const fb = evaluator.buildFailureFeedback({
     count: 1,
@@ -409,7 +425,7 @@ test('Solver handles choice probe shortcut, Unity/linuxEnv skips, Tier 2 skippin
   });
 });
 
-test('Api.startEnv builds canonical start.json query params and respects AbortSignal', async () => {
+test('Api.startEnv and Api.exitDeletePod build canonical payloads and respect AbortSignal', async () => {
   const saved = new Map();
   const overrides = {
     document: { cookie: '_educoder_session=sess1' },
@@ -419,14 +435,15 @@ test('Api.startEnv builds canonical start.json query params and respects AbortSi
     GM_xmlhttpRequest: null,
   };
   let requested = null;
+  let mockResponse = {
+    status: 0,
+    data: { ssh_address: '1.2.3.4', port: 2222, username: 'root', password: 'pw' },
+  };
   overrides.GM_xmlhttpRequest = opts => {
     requested = opts;
     queueMicrotask(() => opts.onload({
       status: 200,
-      response: {
-        status: 0,
-        data: { ssh_address: '1.2.3.4', port: 2222, username: 'root', password: 'pw' },
-      },
+      response: mockResponse,
     }));
     return { abort() {} };
   };
@@ -456,10 +473,33 @@ test('Api.startEnv builds canonical start.json query params and respects AbortSi
     assert.equal(parsed.searchParams.has('homeworkId'), false);
     assert.equal(parsed.searchParams.has('taskId'), false);
 
+    mockResponse = { status: 0 };
+    const delResp = await Api.exitDeletePod('shixun-abc', {
+      envId: 88,
+      gameDbId: 999,
+      tabType: 3,
+      homeworkId: 4074857,
+    });
+    assert.equal(delResp.status, 0);
+    assert.equal(requested.method, 'POST');
+    const delUrl = new URL(requested.url);
+    assert.equal(delUrl.pathname, '/api/myshixuns/shixun-abc/exit_delete_pod.json');
+    assert.equal(delUrl.searchParams.get('zzud'), 'u1');
+    assert.deepEqual(JSON.parse(requested.data), {
+      shixun_environment_id: 88,
+      game_id: 999,
+      tab_type: 3,
+      homework_common_id: 4074857,
+    });
+
     const ac = new AbortController();
     ac.abort();
     await assert.rejects(
       Api.startEnv('shixun-abc', { envId: 88, gameDbId: 999, homeworkId: 4074857 }, ac.signal),
+      err => isAbortError(err),
+    );
+    await assert.rejects(
+      Api.exitDeletePod('shixun-abc', { envId: 88, gameDbId: 999, homeworkId: 4074857 }, ac.signal),
       err => isAbortError(err),
     );
   } finally {

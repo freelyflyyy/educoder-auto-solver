@@ -5,6 +5,7 @@ import { CHALLENGE_TYPE } from '../classifier.js';
 
 const CODE_EXT = /\.(py|java|c|cpp|h|hpp|js|mjs|ts|go|rb|php|sh|sql|cs|m|kt|swift|rs)$/i;
 
+/** Writes and grades a candidate file payload with bounded retries for non-fatal platform errors. */
 async function submitSource(ctx, evaluator, { content, path, label, attempts = TIMING.sourceAttempts }) {
   const { detail, key, model, evalCtx, log, signal } = ctx;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -100,7 +101,8 @@ async function tryLookupTier(ctx, brief, getLookupPath, { answerSource, evaluato
   return false;
 }
 
-async function submitAiCode(ctx, { brief, feedback }, { answerSource, codeGenerator, evaluator }) {
+/** Loads workspace templates, requests AI code generation for editable code files, and submits for grading. */
+async function submitAiCode(ctx, { brief, feedback, previousFiles }, { answerSource, codeGenerator, evaluator }) {
   const { detail, key, model, evalCtx, log, signal } = ctx;
   const originals = await answerSource.readTemplates(key, model.paths, signal);
   const codePaths = model.paths.filter(path => CODE_EXT.test(path));
@@ -111,10 +113,11 @@ async function submitAiCode(ctx, { brief, feedback }, { answerSource, codeGenera
   const generated = await codeGenerator.solve(model, originals, targets, {
     brief,
     feedback,
+    previousFiles,
     log: message => log(message, MSG_LEVEL.INFO),
     signal,
   });
-  return evaluator.writeAndGrade(
+  const passed = await evaluator.writeAndGrade(
     detail,
     key,
     model,
@@ -122,6 +125,7 @@ async function submitAiCode(ctx, { brief, feedback }, { answerSource, codeGenera
     evalCtx,
     { log: message => log(message, MSG_LEVEL.INFO), signal },
   );
+  return { passed, generated };
 }
 
 /** Tier 4: AI code generation fallback with anti-regression retry feedback. */
@@ -145,6 +149,7 @@ async function solveWithAi(ctx, brief, { answerSource, codeGenerator, evaluator,
 
   let reason = '代码评测未通过';
   let feedback = '';
+  let previousFiles = null;
   const maxAttempts = 1 + prefs.data.codeRetries;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     if (signal?.aborted) throw abortError();
@@ -152,10 +157,11 @@ async function solveWithAi(ctx, brief, { answerSource, codeGenerator, evaluator,
       if (attempt > 1) {
         log(`　第 ${attempt - 1}/${maxAttempts - 1} 次自动重试（结合平台报错修正代码）…`, MSG_LEVEL.WARN);
       }
-      const passed = await submitAiCode(ctx, { brief, feedback }, { answerSource, codeGenerator, evaluator });
+      const { passed, generated } = await submitAiCode(ctx, { brief, feedback, previousFiles }, { answerSource, codeGenerator, evaluator });
       if (signal?.aborted) throw abortError();
       if (passed) return { status: 'passed', title: model.title };
-      const failed = await evaluator.failedDetail(key, evalCtx, signal);
+      previousFiles = generated;
+      const failed = await evaluator.failedDetail(key, evalCtx, signal, brief.cases);
       reason = failed.count ? `代码评测未通过（${failed.count} 组用例失败）` : '代码评测未通过';
       feedback = evaluator.buildFailureFeedback(failed);
     } catch (error) {
@@ -180,6 +186,7 @@ async function solveWithAi(ctx, brief, { answerSource, codeGenerator, evaluator,
 export const codeStrategy = {
   name: CHALLENGE_TYPE.CODE,
 
+  /** Executes the 4-tier solving cascade (checker -> reference -> lookup -> AI) for a programming stage. */
   async solve(ctx, { deps }) {
     const { key, model, signal } = ctx;
     const { answerSource } = deps;

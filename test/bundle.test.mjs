@@ -209,7 +209,7 @@ test('Built educoder-auto-solver.user.js matches buildUserscript() output and me
 
   const meta = readFileSync(path.join(ROOT_DIR, 'src/metadata.txt'), 'utf8');
   assert.ok(disk.startsWith(meta), 'metadata header must match src/metadata.txt verbatim');
-  assert.ok(disk.includes('// @version      1.1.0'));
+  assert.ok(disk.includes('// @version      1.2.0'));
   assert.ok(disk.includes('// @grant        GM_xmlhttpRequest'));
   assert.ok(!disk.includes('node:fs'));
   assert.ok(!disk.includes('readFileSync'));

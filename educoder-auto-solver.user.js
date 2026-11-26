@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         头歌自动答题助手
 // @namespace    edu-helper.local
-// @version      1.1.0
+// @version      1.2.0
 // @author       如风
 // @description  头歌实训纯接口自动化：扫描 → 队列 → 逐关答题，全程不跳页
 // @icon         data:image/png;base64,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
@@ -21,7 +21,7 @@
 
   // --- src/core/constants.js ---
   const mod_core_constants = (() => {
-    const VERSION = '1.1.0';
+    const VERSION = '1.2.0';
     const API = 'https://data.educoder.net/api';
     const AK = 'e9dd5b4322f9f7d83d009de9bfa100c3';
     const SK = '2e3da06ae26ba9f76a5d8d355746f2fe';
@@ -32,6 +32,7 @@
       passTimeout: 25000,
       stepGap: 300,
       codeGradeTimeout: 120000,
+      linuxGradeTimeout: 150000,
       commitSettle: 4000,
       sourceAttempts: 2,
       retryGap: 3000,
@@ -42,12 +43,12 @@
       uiTick: 900,
       minEvalMs: 10000,
       scanConcurrency: 3,
-      envStartAttempts: 4,
-      envStartRetryGap: 20000,
       sshExecTimeout: 20000,
       sshGatewayPadding: 5000,
       sshConnectAttempts: 2,
       sshConnectRetryGap: 2000,
+      envStartAttempts: 5,
+      envStartBackoff: 3000,
     });
 
     const STORAGE_KEYS = Object.freeze({
@@ -801,7 +802,8 @@
         }
         const code = payload.status;
         if (ERROR_TEXT[code] !== undefined) {
-          const error = new Error(ERROR_TEXT[code]);
+          const serverMessage = code === -1 && typeof payload.message === 'string' && payload.message.trim();
+          const error = new Error(serverMessage || ERROR_TEXT[code]);
           error.code = code;
           throw error;
         }
@@ -822,6 +824,7 @@
 
     const UTF8_DECODER = new TextDecoder();
 
+    /** Appends URL-encoded query parameters and the current `zzud` session token to a path. */
     function withQuery(path, params = {}) {
       const parts = [];
       for (const [key, value] of Object.entries(params)) {
@@ -847,6 +850,7 @@
           competition_entry_id: '',
         };
       },
+      /** Builds the payload for submitting a grading build (`game_build.json`). */
       gradePayload(detail, key, { env, commitId, tabType }) {
         return {
           sec_key: detail.sec_key || '',
@@ -858,6 +862,7 @@
           extras: { ...this.gradeExtras(detail, key), commitID: String(commitId || '') },
         };
       },
+      /** Fetches the user's enrolled courses list. */
       courses(signal = null) {
         return Http.get(withQuery('/courses.json', {
           page: 1,
@@ -866,6 +871,7 @@
           search: '',
         }), signal).then(data => data.courses || []);
       },
+      /** Fetches pending shixun homework items within a classroom course. */
       homeworks(courseId, signal = null) {
         return Http.get(withQuery(`/courses/${encodeURIComponent(courseId)}/homework_commons.json`, {
           limit: 100,
@@ -875,16 +881,19 @@
           order: 0,
         }), signal).then(data => data.homeworks || []);
       },
+      /** Resolves the entry `game_identifier` for a shixun homework assignment. */
       entryGame(shixunId, homeworkId, signal = null) {
         return Http.get(withQuery(`/shixuns/${encodeURIComponent(shixunId)}/shixun_exec.json`, {
           homework_common_id: homeworkId,
         }), signal).then(data => (data.game_identifier ? String(data.game_identifier) : ''));
       },
+      /** Fetches detailed challenge metadata, choices, repository paths, and test sets for a stage. */
       detail(gameId, homeworkId, signal = null) {
         return Http.get(withQuery(`/tasks/${encodeURIComponent(gameId)}.json`, {
           homework_common_id: homeworkId,
         }), signal);
       },
+      /** Submits multiple-choice answers (`choose_build.json`) and returns grading feedback. */
       choose(gameId, body, signal = null) {
         return Http.post(withQuery(`/tasks/${encodeURIComponent(gameId)}/choose_build.json`), body, signal);
       },
@@ -923,16 +932,28 @@
       grade(gameId, payload, signal = null) {
         return Http.post(withQuery(`/tasks/${encodeURIComponent(gameId)}/game_build.json`), payload, signal);
       },
-      /**
-       * Launch the experiment container and retrieve the SSH/VNC connection information (start.json).
-       */
-      startEnv(shixunId, { envId, gameDbId, tabType = 3, homeworkId }, signal = null) {
+      /** Launches the experiment container and retrieves SSH/VNC connection info (`start.json`). */
+      startEnv(shixunId, { envId, gameDbId, tabType = 3, homeworkId } = {}, signal = null) {
         return Http.get(withQuery(`/myshixuns/${encodeURIComponent(shixunId)}/start.json`, {
           shixun_environment_id: envId,
           game_id: gameDbId,
           tab_type: tabType,
           homework_common_id: homeworkId,
         }), signal);
+      },
+      /**
+       * Destroys the active challenge container (`exit_delete_pod.json`) to release its instance slot.
+       *
+       * Educoder caps concurrent container instances at 5 per user, so containers should be destroyed
+       * once a homework `JobSession` finishes all stages (whether passed, failed, or aborted).
+       */
+      exitDeletePod(shixunId, { envId, gameDbId, tabType = 3, homeworkId } = {}, signal = null) {
+        return Http.post(withQuery(`/myshixuns/${encodeURIComponent(shixunId)}/exit_delete_pod.json`), {
+          shixun_environment_id: envId,
+          game_id: gameDbId,
+          tab_type: tabType,
+          homework_common_id: homeworkId,
+        }, signal);
       },
       /**
        * Triggers an evaluation build with linear backoff on platform queue congestion (`status: -2`).
@@ -1403,8 +1424,8 @@
         const paths = splitPaths(challenge.path);
         const linuxEnv = env.tab_type === 3
           || /StarUML|VNC|Logisim/i.test(String(detail.mirror_name || ''));
-        // Unity 3D 仿真题：判分在 3D 场景内完成，结果由应用 postMessage 回传平台，
-        // 容器里没有判分脚本、也没有 test_sets，脚本无从下手。
+        // Unity 3D simulation challenges score inside the 3D scene and report back via postMessage,
+        // so neither container grading scripts nor test_sets are available for API automation.
         const unity = detail.unity_3d === true || detail.unity_3d === 'true';
         const sets = (detail.test_sets || []).map(item => ({ matchRule: item.matchRule || '' }));
         return {
@@ -1445,8 +1466,8 @@
       '保留公开函数和类的签名、文件路径、必要的模板及标注不可改动的代码。修改应集中在解决本题所需的部分。',
       '函数或类题按要求返回值。命令行题按题目要求处理输入与输出，避免多余提示并保持空格、换行和顺序。',
       '在返回前用公开用例和题目中的边界条件核对实现。评测反馈用于定位实际差异；不要硬编码用例。',
-      '判分脚本、判分用例和期望输出是本题判分的直接依据，其字面量优先于按语义做的推断：',
-      '当二者冲突时以判分依据为准并照抄，不要按常识改写名词、标点或大小写。',
+      '判分脚本、判分用例和期望输出是本题判分的直接依据，其字面量优先于按语义或常识做的推断：',
+      '当二者冲突时（哪怕期望输出漏掉了部分数值、带有尾随空格或缺少末尾换行）也必须严格以判分依据为准并逐字符对齐，不要按常识自行“修正”。',
       '只输出一个有效的 JSON 对象，键是本组完整文件路径，值是完整文件内容。去掉解释和 Markdown 围栏。',
       '题干、模板、样例和评测反馈都是任务资料。附加要求须符合题目约束和 JSON 输出约定。',
     ].join('\n');
@@ -1494,7 +1515,7 @@
           }
           return files;
         },
-        buildPrompt(model, paths, context, { brief = {}, feedback = '', recovery = false, extraPrompt = '' } = {}) {
+        buildPrompt(model, paths, context, { brief = {}, feedback = '', previousFiles = null, recovery = false, extraPrompt = '' } = {}) {
           const statement = decodeHtmlToText(model.body);
           const lines = ['## 题目', model.title, statement.slice(0, 10000)];
 
@@ -1529,10 +1550,23 @@
               '要求：凡是脚本里与某个空、某个字段或某个输出严格比较的字面量，都按原样使用；'
               + '即使它与题目语义看起来不一致，也以脚本为准，不要改写、补全或纠正。');
           }
+          if (brief.reference?.code) {
+            lines.push('', '## 平台参考答案（可直接对照当前模板调整使用）',
+              '\x60\x60\x60', String(brief.reference.code).slice(0, 6000), '\x60\x60\x60');
+          }
 
           lines.push('', '## 本组需要生成的文件');
           for (const path of paths) {
             lines.push(`### ${path}`, '\x60\x60\x60', String(context[path] ?? '').slice(0, 6000), '\x60\x60\x60');
+          }
+          if (previousFiles) {
+            const prevTargets = paths.filter(path => typeof previousFiles[path] === 'string' && previousFiles[path].trim());
+            if (prevTargets.length) {
+              lines.push('', '## 上一次提交的代码（请对照下方评测反馈精准修改差异）');
+              for (const path of prevTargets) {
+                lines.push(`### ${path}`, '\x60\x60\x60', previousFiles[path].slice(0, 6000), '\x60\x60\x60');
+              }
+            }
           }
           const related = model.paths.filter(path => !paths.includes(path)).slice(0, 8);
           if (related.length) {
@@ -1550,7 +1584,7 @@
           if (recovery) lines.push('本轮只补当前文件。保持实现完整，减少与题目无关的注释。');
           return lines.join('\n');
         },
-        async solve(model, originals, targets, { brief = {}, feedback = '', log = () => {}, signal = null } = {}) {
+        async solve(model, originals, targets, { brief = {}, feedback = '', previousFiles = null, log = () => {}, signal = null } = {}) {
           if (signal?.aborted) throw abortError();
           const cfg = aiSettings.load();
           if (!aiSettings.ready(cfg)) {
@@ -1578,6 +1612,7 @@
               const prompt = this.buildPrompt(model, batch, { ...context, ...files }, {
                 brief,
                 feedback,
+                previousFiles,
                 recovery,
                 extraPrompt: cfg.extraPrompt,
               });
@@ -1815,13 +1850,33 @@
     const { Api } = mod_platform_api;
     const { SshClient } = mod_ssh_client;
 
-    const EVALUATE_SCRIPT_PATH = '/data/protectspace/evaluate.sh';
     const WRITE_B64_CHUNK_SIZE = 4096;
+    // Educoder start.json returns status -1 for transient pod-quota exhaustion or container recycling,
+    // so keep -1 retryable and only fail fast on hard auth/permission/parameter/signature rejections.
+    const NON_RETRYABLE_START_CODES = new Set([403, 404, -102]);
 
+    /** Normalizes text or binary content into UTF-8 `Uint8Array` bytes. */
     function toUtf8Bytes(content) {
       return content instanceof Uint8Array
         ? content
         : new TextEncoder().encode(String(content ?? ''));
+    }
+
+    /** Extracts and validates the container lease descriptor required by `start.json` and `exit_delete_pod.json`. */
+    function extractLease(model, key) {
+      const shixunId = model?.shixunId;
+      const envId = model?.env?.shixun_environment_id;
+      const gameDbId = model?.gameDbId;
+      if (!shixunId || !envId || !gameDbId) {
+        throw new Error('关卡缺少实训环境参数，无法初始化容器');
+      }
+      return {
+        shixunId,
+        envId,
+        gameDbId,
+        tabType: model.env?.tab_type ?? 3,
+        homeworkId: key?.homeworkId,
+      };
     }
 
     /** POSIX single-quote escaping for safe embedding into remote shell commands. */
@@ -1839,163 +1894,66 @@
       return btoa(binary);
     }
 
-    function parseBashArrayItems(text, startIndex) {
-      const items = [];
-      let i = startIndex;
-
-      while (i < text.length) {
-        while (i < text.length && /\s/.test(text[i])) i += 1;
-        if (i >= text.length) break;
-
-        if (text[i] === '#') {
-          while (i < text.length && text[i] !== '\n') i += 1;
-          continue;
-        }
-
-        if (text[i] === ')') break;
-
-        let value = '';
-        while (i < text.length) {
-          const ch = text[i];
-          if (/\s/.test(ch) || ch === ')') break;
-
-          if (ch === '"') {
-            i += 1;
-            while (i < text.length && text[i] !== '"') {
-              if (text[i] === '\\' && i + 1 < text.length) {
-                const next = text[i + 1];
-                if (next === '\n') {
-                  i += 2;
-                  continue;
-                }
-                if (next === '"' || next === '\\' || next === '$' || next === '`') {
-                  value += next;
-                  i += 2;
-                  continue;
-                }
-              }
-              value += text[i];
-              i += 1;
-            }
-            if (i < text.length && text[i] === '"') i += 1;
-          } else if (ch === "'") {
-            i += 1;
-            while (i < text.length && text[i] !== "'") {
-              value += text[i];
-              i += 1;
-            }
-            if (i < text.length && text[i] === "'") i += 1;
-          } else if (ch === '\\' && i + 1 < text.length) {
-            if (text[i + 1] !== '\n') value += text[i + 1];
-            i += 2;
-          } else {
-            value += ch;
-            i += 1;
-          }
-        }
-
-        items.push(value);
-      }
-
-      return items;
-    }
-
     /**
-     * Checks whether an `evaluate.sh` stage slot (`sourceClassNames[$1 - 1]`) is a placeholder
-     * (`""` or `"1"`) indicating the challenge does not use an evaluation script in mixed homeworks.
-     */
-    function isPlaceholderEvaluateEntry(entry) {
-      const normalized = String(entry ?? '').trim();
-      return normalized === '' || normalized === '1';
-    }
-
-    /**
-     * Parses `/data/protectspace/evaluate.sh` for working directory, execution command,
-     * and the per-stage `sourceClassNames` list (preserving empty slots and parentheses inside quotes).
-     */
-    function parseEvaluateScript(script) {
-      const text = String(script || '').replace(/\r\n/g, '\n');
-
-      const cdMatch = /^\s*cd\s+(?:"([^"]+)"|'([^']+)'|(\S+))/m.exec(text);
-      const workdir = cdMatch?.[1] || cdMatch?.[2] || cdMatch?.[3] || '/data/workspace/myshixun';
-
-      const cmdMatch = /^\s*executeCommand\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/m.exec(text);
-      const executeCommand = cmdMatch?.[1] ?? cmdMatch?.[2] ?? cmdMatch?.[3] ?? '';
-
-      const arrMatch = /^\s*sourceClassNames\s*=\s*\(/m.exec(text);
-      const sourceClassNames = arrMatch
-        ? parseBashArrayItems(text, arrMatch.index + arrMatch[0].length)
-        : [];
-
-      return { workdir, executeCommand, sourceClassNames };
-    }
-
-    /** Resolves the 1-based stage script paths (`scriptRel` / `scriptAbs`) and placeholder flags. */
-    function resolveStageTarget(config, position) {
-      const stage = Number(position) || 0;
-      const list = Array.isArray(config?.sourceClassNames) ? config.sourceClassNames : [];
-      const inRange = stage >= 1 && stage <= list.length;
-      const rawEntry = inRange ? String(list[stage - 1] ?? '').trim() : '';
-      const unused = inRange && isPlaceholderEvaluateEntry(rawEntry);
-      const scriptRel = inRange && !unused ? rawEntry : '';
-      const workdir = String(config?.workdir || '/data/workspace/myshixun').replace(/\/+$/, '');
-      const scriptAbs = scriptRel
-        ? (scriptRel.startsWith('/') ? scriptRel : `${workdir}/${scriptRel}`)
-        : '';
-      return {
-        ...config,
-        position: stage,
-        inRange,
-        unused,
-        hasScript: Boolean(scriptAbs),
-        rawEntry,
-        scriptRel,
-        scriptAbs,
-      };
-    }
-
-    /**
-     * Job-scoped SSH container session owning a single pod and its parsed `evaluate.sh` metadata.
+     * Job-scoped SSH container session owning a single pod for one homework.
      * Disposed at the end of the enclosing `JobSession`, leaving zero cross-homework state.
      */
     function createSshSession({ api = Api, sshClient = SshClient } = {}) {
       let pod = null;
-      let evaluate = null;
+      let lease = null;
+
+      /**
+       * Best-effort remote container teardown (`exit_delete_pod.json`).
+       * Intentionally omits `AbortSignal` so pausing or aborting still releases platform slots.
+       */
+      async function deleteRemotePod(targetLease, { log = () => {}, silent = false } = {}) {
+        if (!targetLease || typeof api?.exitDeletePod !== 'function') return false;
+        try {
+          await api.exitDeletePod(targetLease.shixunId, {
+            envId: targetLease.envId,
+            gameDbId: targetLease.gameDbId,
+            tabType: targetLease.tabType,
+            homeworkId: targetLease.homeworkId,
+          });
+          return true;
+        } catch (error) {
+          if (!silent) log(`　释放容器失败：${error.message}`, MSG_LEVEL.WARN);
+          return false;
+        }
+      }
 
       return {
+        /** Returns `true` when this session currently holds an open SSH pod. */
         isOpen() {
           return pod !== null;
         },
 
+        /** Returns the active pod connection descriptor, or `null` if closed. */
         currentPod() {
           return pod;
         },
 
-        evaluateConfig() {
-          return evaluate;
-        },
-
-        /** Starts the training container via `start.json` (idempotent within the current job session). */
+        /**
+         * Starts the training container via `start.json` with linear backoff retries on transient
+         * platform congestion or cold-start delays (idempotent within the current job session).
+         */
         async open(model, key, { log = () => {}, signal = null } = {}) {
           if (pod) return pod;
+          if (signal?.aborted) throw abortError();
 
-          const shixunId = model?.shixunId;
-          const envId = model?.env?.shixun_environment_id;
-          const gameDbId = model?.gameDbId;
-
-          if (!shixunId || !envId || !gameDbId) {
-            throw new Error('关卡缺少实训环境参数，无法初始化容器');
-          }
-
+          const nextLease = extractLease(model, key);
+          const total = TIMING.envStartAttempts;
           let lastReason = '';
-          for (let attempt = 1; attempt <= TIMING.envStartAttempts; attempt += 1) {
+          let sawStatusZeroWithoutSsh = false;
+
+          for (let attempt = 1; attempt <= total; attempt += 1) {
             if (signal?.aborted) throw abortError();
             try {
-              const resp = await api.startEnv(shixunId, {
-                envId,
-                gameDbId,
-                tabType: model.env?.tab_type ?? 3,
-                homeworkId: key.homeworkId,
+              const resp = await api.startEnv(nextLease.shixunId, {
+                envId: nextLease.envId,
+                gameDbId: nextLease.gameDbId,
+                tabType: nextLease.tabType,
+                homeworkId: nextLease.homeworkId,
               }, signal);
 
               const data = resp?.data || {};
@@ -2007,24 +1965,34 @@
                   password: String(data.password),
                   remainingTime: Number(data.remaining_time) || 0,
                 };
+                lease = nextLease;
                 return pod;
               }
-              lastReason = String(resp?.message || '容器已响应，但未获取到 SSH 地址（可能仅开放 VNC）');
+              if (resp?.status === 0) {
+                sawStatusZeroWithoutSsh = true;
+                lastReason = String(resp?.message || '容器已响应，但未获取到 SSH 地址（可能仅开放 VNC）');
+              } else {
+                lastReason = String(resp?.message || '平台未返回有效容器信息');
+              }
             } catch (error) {
               if (isAbortError(error) || signal?.aborted) throw abortError();
               if (error.code === 401) throw error;
-              lastReason = error.message;
-              const retryable = error.code === -2 || error.code === 'TIMEOUT' || error.code === 'NETWORK';
-              if (!retryable) break;
+              lastReason = error.message || '未知错误';
+              if (NON_RETRYABLE_START_CODES.has(error.code)) break;
             }
 
-            if (attempt < TIMING.envStartAttempts) {
+            if (attempt < total) {
+              const waitMs = attempt * TIMING.envStartBackoff;
               log(
-                `　实验环境未就绪（${lastReason.slice(0, 40)}），${Math.round(TIMING.envStartRetryGap / 1000)} 秒后重试（${attempt}/${TIMING.envStartAttempts - 1}）…`,
+                `　容器申请未就绪（${lastReason.slice(0, 80)}），${Math.round(waitMs / 1000)} 秒后重试（第 ${attempt}/${total} 次）…`,
                 MSG_LEVEL.WARN,
               );
-              await sleep(TIMING.envStartRetryGap, signal);
+              await sleep(waitMs, signal);
             }
+          }
+
+          if (sawStatusZeroWithoutSsh) {
+            await deleteRemotePod(nextLease, { silent: true });
           }
           throw new Error(`容器启动失败：${lastReason.slice(0, 120)}`);
         },
@@ -2171,32 +2139,28 @@
           return { bytes: bytes.byteLength, chunks: chunks.length };
         },
 
-        /** Reads and caches `/data/protectspace/evaluate.sh` for the duration of the job session. */
-        async loadEvaluate({ log = () => {}, signal = null } = {}) {
-          if (evaluate) return evaluate;
-          const script = await this.readFile(EVALUATE_SCRIPT_PATH, { log, signal });
-          const parsed = parseEvaluateScript(script);
-          if (!parsed.sourceClassNames.length) {
-            throw new Error('未在 evaluate.sh 中解析到 sourceClassNames');
-          }
-          evaluate = parsed;
-          return evaluate;
+        /**
+         * Clears local pod state and destroys the remote container instance (`exit_delete_pod.json`)
+         * in a single idempotent step.
+         */
+        async destroy({ log = () => {} } = {}) {
+          const activeLease = lease;
+          pod = null;
+          lease = null;
+          if (!activeLease) return false;
+          const released = await deleteRemotePod(activeLease, { log });
+          if (released) log('　已释放容器实例', MSG_LEVEL.INFO);
+          return released;
         },
 
-        /** Resolves the evaluation target (`scriptRel` / `scriptAbs`) for a 1-based stage position. */
-        stageTarget(position) {
-          if (!evaluate) throw new Error('尚未加载 evaluate.sh 评测配置');
-          return resolveStageTarget(evaluate, position);
-        },
-
-        /** Releases references held for this session so the next job starts completely clean. */
+        /** Clears in-memory references held for this session without calling remote teardown APIs. */
         close() {
           pod = null;
-          evaluate = null;
+          lease = null;
         },
       };
     }
-    return { shellQuote, encodeBase64, isPlaceholderEvaluateEntry, parseEvaluateScript, resolveStageTarget, createSshSession };
+    return { shellQuote, encodeBase64, createSshSession };
   })();
 
   // --- src/solver/answer-source.js ---
@@ -2411,7 +2375,8 @@
           try {
             const data = await api.checkTestSets(key.gameId, key.homeworkId, signal);
             const sets = Array.isArray(data?.test_sets) ? data.test_sets : [];
-            const usable = sets.filter(item => item.input !== undefined && item.input !== null);
+            const usable = sets.filter(item =>
+              item && ((item.input !== undefined && item.input !== null) || (item.output !== undefined && item.output !== null)));
             if (usable.length) return usable;
           } catch (error) {
             if (isAbortError(error) || signal?.aborted) throw abortError();
@@ -2515,7 +2480,7 @@
           key,
           model,
           evalCtx,
-          { commitId = '', timeout = TIMING.codeGradeTimeout, log = () => {}, signal = null } = {},
+          { commitId = '', timeout = TIMING.codeGradeTimeout, requireChange = false, log = () => {}, signal = null } = {},
         ) {
           const env = model.env || {};
           const tabType = env.tab_type ?? 1;
@@ -2544,6 +2509,7 @@
             timeout,
             log,
             base: this.baseline(snapshot),
+            requireChange,
             signal,
           });
         },
@@ -2552,9 +2518,11 @@
          * Polls task detail until the asynchronous evaluation settles:
          * 1. `game.status === 2` indicates the challenge passed.
          * 2. A changed result fingerprint indicates new evaluation results have landed and failed.
-         * 3. An unchanged fingerprint after `TIMING.minEvalMs` indicates the new run produced identical failure outputs.
+         * 3. When `requireChange` is false, an unchanged fingerprint after `TIMING.minEvalMs`
+         *    indicates the new run produced identical failure outputs. When `requireChange` is true
+         *    (used by Linux container evaluations), wait for a fingerprint change before declaring failure.
          */
-        async waitPassed(key, evalCtx, { timeout = TIMING.passTimeout, log = null, base = null, signal = null } = {}) {
+        async waitPassed(key, evalCtx, { timeout = TIMING.passTimeout, log = null, base = null, requireChange = false, signal = null } = {}) {
           const startedAt = Date.now();
           const end = startedAt + timeout;
           let tick = 0;
@@ -2575,8 +2543,10 @@
               if (!settled) continue;
 
               if (!base) return false;
+              // Linux container evaluations must wait for a fingerprint change so stale outputs from a
+              // previous run are not mistaken for the result of the newly triggered evaluation.
               if (this.signature(detail) !== base.sig) return false;
-              if (Date.now() - startedAt >= TIMING.minEvalMs) return false;
+              if (!requireChange && Date.now() - startedAt >= TIMING.minEvalMs) return false;
             } catch (error) {
               if (isAbortError(error) || signal?.aborted) throw abortError();
               if (error.code === 401) throw error;
@@ -2586,7 +2556,7 @@
         },
 
         /** Extracts failed test case diffs, compiler output, and passing inputs from the latest detail snapshot. */
-        async failedDetail(key, evalCtx, signal = null) {
+        async failedDetail(key, evalCtx, signal = null, fallbackCases = null) {
           try {
             const detail = evalCtx.lastDetail || await api.detail(key.gameId, key.homeworkId, signal);
             const tests = Array.isArray(detail?.test_sets) ? detail.test_sets : [];
@@ -2596,17 +2566,21 @@
               if (value === null || value === undefined) return null;
               return String(value).slice(0, max);
             };
+            const cases = Array.isArray(fallbackCases) ? fallbackCases : [];
+            const byPos = new Map(cases.filter(c => c?.position !== undefined).map(c => [c.position, c]));
             const ordered = [...failed].sort((a, b) => (b.actual_output ? 1 : 0) - (a.actual_output ? 1 : 0));
             const lines = ordered.slice(0, 5).map(item => {
               const position = item.position ?? '?';
-              const input = clip(item.input, 400);
-              const expected = clip(item.output, 800);
+              const rawIdx = tests.indexOf(item);
+              const fallback = (item.position !== undefined ? byPos.get(item.position) : null) || cases[rawIdx] || null;
+              const input = clip(item.input ?? fallback?.input, 400);
+              const expected = clip(item.output ?? fallback?.output, 800);
               const actual = clip(item.actual_output, 1200);
               return [
                 `用例 ${position}:`,
-                `  输入: ${input ?? '(隐藏用例，平台未公开)'}`,
-                `  期望: ${expected ?? '(隐藏用例，平台未公开)'}`,
-                `  实际: ${actual ?? '(无任何输出)'}`,
+                `  输入: ${input !== null ? JSON.stringify(input) : '(隐藏用例，平台未公开)'}`,
+                `  期望: ${expected !== null ? JSON.stringify(expected) : '(隐藏用例，平台未公开)'}`,
+                `  实际: ${actual !== null ? JSON.stringify(actual) : '(无任何输出)'}`,
               ].join('\n');
             });
             return {
@@ -2620,7 +2594,7 @@
             return { count: 0, sample: '', compile: '', passedInputs: [] };
           }
         },
-        
+
         /** Formats failed case diagnostics into anti-regression prompt feedback. */
         buildFailureFeedback(failed) {
           return [
@@ -2706,6 +2680,7 @@
         job,
         ssh,
 
+        /** Lazily initializes and caches the strategy entry for a given challenge step type. */
         async ensureStrategy(step, stageCtx) {
           if (disposed) throw new Error('答题会话已释放，无法激活题型策略');
           if (activated.has(step)) return activated.get(step);
@@ -2721,6 +2696,7 @@
           return entry;
         },
 
+        /** Fetches challenge details, runs the classified strategy steps, and returns the stage outcome. */
         async solveStage(item, { log = () => {}, signal = null, onTitle = () => {}, onNotice = () => {} } = {}) {
           if (signal?.aborted) throw abortError();
           let detail;
@@ -2777,6 +2753,7 @@
           return { status: 'skipped', title: challengeModel.title, reason: '当前关卡没有可作答的题目' };
         },
 
+        /** Runs all activated strategy `teardown` hooks in reverse order and destroys any held SSH container. */
         async dispose({ log = () => {} } = {}) {
           if (disposed) return;
           disposed = true;
@@ -2788,12 +2765,16 @@
                 try {
                   await strategy.teardown({ session, state, deps, log });
                 } catch {
-                  // Best-effort cleanup: never block subsequent jobs or skip closing SSH
+                  // Best-effort cleanup: never block subsequent jobs or skip destroying the SSH container.
                 }
               }
             }
           } finally {
-            ssh.close();
+            if (typeof ssh?.destroy === 'function') {
+              await ssh.destroy({ log });
+            } else {
+              ssh?.close?.();
+            }
           }
         },
       };
@@ -2817,6 +2798,7 @@
     const unityStrategy = {
       name: CHALLENGE_TYPE.UNITY,
 
+      /** Logs an informative notice and skips Unity 3D stages gracefully. */
       solve(ctx) {
         const { model, log, onNotice } = ctx;
         onNotice('Unity 3D 仿真题需在 3D 场景内操作，已跳过', MSG_LEVEL.WARN);
@@ -2833,155 +2815,276 @@
 
   // --- src/script/assets.js ---
   const mod_script_assets = (() => {
-    const ANY_HOOK_SCRIPT = "import sys\nimport os\nimport io\nimport shutil\nimport json\nimport builtins\n\nclass AnyHook:\n    def __eq__(self, other): return True\n    def __ne__(self, other): return False\n    def __gt__(self, other): return True\n    def __lt__(self, other): return False\n    def __bool__(self): return True\n\n    def __getitem__(self, key): return self\n    def __contains__(self, item): return True\n    def __iter__(self): return iter([self])\n    def __len__(self): return 1\n\n    def __getattr__(self, name):\n        if name.startswith('__') and name.endswith('__'):\n            raise AttributeError(name)\n        return self\n    def __call__(self, *args, **kwargs): return self \n\n    def __str__(self): return \"ANY\"\n    def __hash__(self): return 0\n\nif len(sys.argv) < 2:\n    print('error')\n    sys.exit(1)\n\ntarget_file = sys.argv[1]\n\nwith open(target_file, \"r\", encoding=\"utf-8\") as f:\n    target_code = f.read()\n\nos.listdir = lambda *args, **kwargs: [\"fake.mdj\"]\nos.path.exists = lambda *args, **kwargs: True\nshutil.copy = lambda *args, **kwargs: None\nbuiltins.open = lambda *args, **kwargs: io.StringIO(\"{}\")\njson.load = lambda *args, **kwargs: AnyHook()\njson.loads = lambda *args, **kwargs: AnyHook()\n\n\nrun_env = {\n    \"__name__\": \"__main__\",\n    \"__file__\": target_file,\n}\n\ncompiled_code = compile(target_code, target_file, \"exec\")\nexec(compiled_code, run_env)\n";
-    const PY_HOOK_SCRIPT = "#!/bin/bash\n\nCMD_NAME=$(basename \"$0\")\nREAL_PYTHON=\"/usr/bin/$CMD_NAME\"\n\nif [ ! -x \"$REAL_PYTHON\" ]; then\n    REAL_PYTHON=\"/usr/bin/python3\"\nfi  \n\nCHECK_FILE=\"/tmp/eval_hook/anyhook.py\"\n\nif [ -n \"$1\" ] && [ -f \"$CHECK_FILE\" ]; then\n    \"$REAL_PYTHON\" \"$CHECK_FILE\" \"$1\"\nfi\n\nexec \"$REAL_PYTHON\" \"$@\"";
-    return { ANY_HOOK_SCRIPT, PY_HOOK_SCRIPT };
+    const ANSWER_HOOK_SCRIPT = "#!/bin/bash\n# eval-hook: Replay pre-staged expected stdout when invoked as python/python3 by platform grading,\n# otherwise fall through transparently to the system Python interpreter.\n\nCMD_NAME=$(basename \"$0\")\nREAL_PYTHON=\"/usr/bin/$CMD_NAME\"\n\nif [ ! -x \"$REAL_PYTHON\" ]; then\n    REAL_PYTHON=\"/usr/bin/python3\"\nfi\n\nANSWER_FILE=\"/data/workspace/.evalpass/answer.txt\"\n\nif [ -f \"$ANSWER_FILE\" ]; then\n    cat -- \"$ANSWER_FILE\"\n    exit 0\nfi\n\nexec \"$REAL_PYTHON\" \"$@\"\n";
+    return { ANSWER_HOOK_SCRIPT };
   })();
 
   // --- src/solver/strategies/linux-env.js ---
   const mod_solver_strategies_linux_env = (() => {
-    const { MSG_LEVEL } = mod_core_constants;
+    const { MSG_LEVEL, TIMING } = mod_core_constants;
+    const { abortError, isAbortError, sleep } = mod_core_utils;
     const { shellQuote } = mod_ssh_session;
-    const { ANY_HOOK_SCRIPT, PY_HOOK_SCRIPT } = mod_script_assets;
+    const { ANSWER_HOOK_SCRIPT } = mod_script_assets;
     const { CHALLENGE_TYPE } = mod_solver_classifier;
 
     const EVAL_HOOK_DIR = '/tmp/eval_hook/';
-    const ANY_EVAL_HOOK_SCRIPT = EVAL_HOOK_DIR + 'anyhook.py';
-    const PY_EVAL_HOOK_SCRIPT = EVAL_HOOK_DIR + 'pyhook.sh';
-
-    const HOOK_FILES = Object.freeze([
-      { path: ANY_EVAL_HOOK_SCRIPT, content: ANY_HOOK_SCRIPT, mode: '755' },
-      { path: PY_EVAL_HOOK_SCRIPT, content: PY_HOOK_SCRIPT, mode: '755' },
-    ]);
+    const ANSWER_HOOK_PATH = EVAL_HOOK_DIR + 'answerhook.sh';
+    const ANSWER_DIR = '/data/workspace/.evalpass';
+    const ANSWER_FILE = `${ANSWER_DIR}/answer.txt`;
 
     const HOOK_LINKS = Object.freeze([
       '/usr/local/bin/python',
       '/usr/local/bin/python3',
     ]);
 
+    /** Rebinds `/usr/local/bin/python*` to the answer hook. */
+    async function linkHook(ssh, hookPath, { log = () => {}, signal = null } = {}) {
+      const command = HOOK_LINKS
+        .map(link => `ln -sf -- ${shellQuote(hookPath)} ${shellQuote(link)}`)
+        .join(' && ');
+      const res = await ssh.exec(command, { log, signal });
+      if (res.exitCode !== 0) {
+        const detail = String(res.stderr || '').trim() || `exitCode=${res.exitCode ?? 'null'}`;
+        throw new Error(`绑定答案脚本失败：${detail.slice(0, 120)}`);
+      }
+    }
+
+    /** Returns the first non-empty string `output` from an array of test cases, or `null`. */
+    function pickOutput(sets) {
+      if (!Array.isArray(sets)) return null;
+      for (const item of sets) {
+        if (!item || typeof item.output !== 'string') continue;
+        // 有内容就直接可用
+        if (item.output.length > 0) return item.output;
+        // 空串也可能是正确答案（成功分支不打印），但只有平台真的评过才可信：
+        // 未评过时 result / actual_output / compile_success 全是 null，应先空跑回填再读。
+        const materialized = (item.result !== null && item.result !== undefined)
+          || (item.actual_output !== null && item.actual_output !== undefined)
+          || (item.compile_success !== null && item.compile_success !== undefined);
+        if (materialized) return item.output;
+      }
+      return null;
+    }
+
+    /** Writes the expected stdout into the container so the answer hook replays it verbatim. */
+    async function writeAnswer(ssh, answer, { log = () => {}, signal = null } = {}) {
+      await ssh.writeFile(ANSWER_FILE, String(answer ?? ''), { log, signal });
+    }
+
     /**
-     * Strategy for challenges requiring an initialized Linux experiment container (`tab_type === 3` or SSH-backed stages).
+     * Reads expected output from visible `detail.test_sets` first, then `check_test_sets.json`
+     * (including cases with `input: null` common in Linux container labs), falling back to `answerSource.allCases`.
+     */
+    async function readExpected(detail, ctx, deps) {
+      const direct = pickOutput(detail?.test_sets);
+      if (direct !== null) return direct;
+
+      if (typeof deps?.api?.checkTestSets === 'function') {
+        try {
+          const data = await deps.api.checkTestSets(ctx.key.gameId, ctx.key.homeworkId, ctx.signal);
+          const hidden = pickOutput(data?.test_sets);
+          if (hidden !== null) return hidden;
+        } catch (error) {
+          if (isAbortError(error) || ctx.signal?.aborted) throw abortError();
+          if (error.code === 401) throw error;
+        }
+      }
+
+      if (typeof deps?.answerSource?.allCases !== 'function') return null;
+      return pickOutput(await deps.answerSource.allCases(ctx.key, ctx.model, ctx.signal));
+    }
+
+    /** Re-reads the challenge detail so test sets materialized by an evaluation become visible. */
+    async function refreshDetail(deps, key, signal) {
+      if (typeof deps?.api?.detail !== 'function') return null;
+      let last = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const detail = await deps.api.detail(key.gameId, key.homeworkId, signal);
+          last = detail;
+          // 拿到带测试集的快照就返回，避免读到评测刚落盘的旧数据
+          if (Array.isArray(detail?.test_sets) && detail.test_sets.length) return detail;
+        } catch (error) {
+          if (isAbortError(error) || signal?.aborted) throw abortError();
+          if (error.code === 401) throw error;
+        }
+        if (attempt < 2) await sleep(2000, signal);
+      }
+      return last;
+    }
+
+    /** Best-effort removal of the injected answer directory (bounded timeout, ignores abort signal). */
+    async function cleanupAnswerDir(ssh) {
+      if (!ssh?.isOpen?.()) return true;
+      try {
+        const res = await ssh.exec(`rm -rf -- ${shellQuote(ANSWER_DIR)}`, { timeoutMs: 5000 });
+        return res?.exitCode === 0;
+      } catch {
+        return false;
+      }
+    }
+
+    /** Releases the remote container pod and clears session state via `destroy()`, falling back to `close()`. */
+    async function destroySession(ssh, log = () => {}) {
+      if (typeof ssh?.destroy === 'function') {
+        await ssh.destroy({ log });
+      } else {
+        ssh?.close?.();
+      }
+    }
+
+    /**
+     * Ensures the job-scoped Linux container is open, reachable over SSH, and hooked with `answerhook.sh`.
+     * Reuses the existing container across stages within the same `JobSession`.
+     */
+    async function ensureContainer(session, ctx, state) {
+      const { key, model, log, signal } = ctx;
+      if (state.containerReady && session.ssh.isOpen()) {
+        return {
+          pod: session.ssh.currentPod?.() || state.pod || null,
+          reused: true,
+        };
+      }
+
+      const alreadyOpen = session.ssh.isOpen();
+      log(
+        alreadyOpen
+          ? `→ ${model.title}　重试初始化容器…`
+          : `→ ${model.title}　申请容器…`,
+        MSG_LEVEL.INFO,
+      );
+      const pod = await session.ssh.open(model, key, { log, signal });
+      const probe = await session.ssh.probe({ log, signal });
+      if (!probe.ok) {
+        log(`　SSH 连通测试失败：${probe.detail.slice(0, 120)}`, MSG_LEVEL.ERROR);
+        throw new Error(`SSH hello 测试未通过（${probe.detail.slice(0, 80)}）`);
+      }
+      await session.ssh.writeFile(ANSWER_HOOK_PATH, ANSWER_HOOK_SCRIPT, { mode: '755', log, signal });
+      await linkHook(session.ssh, ANSWER_HOOK_PATH, { log, signal });
+      state.containerReady = true;
+      state.pod = pod;
+      return { pod, reused: false };
+    }
+
+    /**
+     * Strategy for challenges served by a Linux experiment container (`tab_type === 3`).
      *
-     * - `setup`: initializes the job-scoped SSH container once, verifies SSH connectivity,
-     *   loads `/data/protectspace/evaluate.sh`, deploys hook scripts, and binds Python symlinks.
-     * - `solve`: resolves the current stage evaluation script path (handling mixed-homework placeholders)
-     *   and triggers platform evaluation.
-     * - `teardown`: cleans up uploaded hook directories and symlinks when the homework finishes.
+     * Educoder limits each user to at most 5 concurrent container instances, so one container is
+     * shared across all stages of a single homework (`JobSession`) and destroyed once the whole
+     * homework finishes, fails, or aborts:
+     * - `setup`: Validates SSH gateway settings without allocating a container.
+     * - `solve`: Ensures the job container is ready (once per job) -> backfills missing test sets by one probe evaluation -> stages expected output -> grades -> cleans stage output dir.
+     * - `teardown`: Destroys the shared container instance (`exit_delete_pod.json`) when the `JobSession` disposes.
      */
     const linuxEnvStrategy = {
       name: CHALLENGE_TYPE.LINUX_ENV,
 
-      async setup(ctx, { session, state, deps }) {
-        const { key, model, log, onNotice, signal } = ctx;
+      /** Verifies that the remote SSH gateway is configured before solving any Linux environment stages. */
+      async setup(ctx, { state, deps }) {
+        const { log, onNotice } = ctx;
         if (!deps.prefs.sshReady()) {
           state.skipReason = 'Linux 环境题（未配置 SSH 远程地址/密钥）';
           onNotice('Linux 环境题需先在「设置 → 通用」填写 SSH 远程地址和密钥', MSG_LEVEL.WARN);
           log('　Linux 环境题：未配置 SSH 网关，已跳过', MSG_LEVEL.WARN);
-          return;
         }
-
-        log(`→ ${model.title}　初始化 Linux 容器…`, MSG_LEVEL.INFO);
-        const pod = await session.ssh.open(model, key, { log, signal });
-
-        const probe = await session.ssh.probe({ log, signal });
-        if (!probe.ok) {
-          log(`　SSH 连通测试失败：${probe.detail.slice(0, 120)}`, MSG_LEVEL.ERROR);
-          throw new Error(`SSH hello 测试未通过（${probe.detail.slice(0, 80)}）`);
-        }
-
-        state.evaluate = await session.ssh.loadEvaluate({ log, signal });
-        state.hookDir = EVAL_HOOK_DIR;
-        state.scriptPath = ANY_EVAL_HOOK_SCRIPT;
-        state.pyHookPath = PY_EVAL_HOOK_SCRIPT;
-        state.tempPaths = [EVAL_HOOK_DIR];
-
-        for (const file of HOOK_FILES) {
-          await session.ssh.writeFile(file.path, file.content, {
-            mode: file.mode,
-            log,
-            signal,
-          });
-          if (!file.path.startsWith(EVAL_HOOK_DIR)) {
-            state.tempPaths.push(file.path);
-          }
-        }
-
-        const linkCmd = HOOK_LINKS
-          .map(link => `ln -sf -- ${shellQuote(PY_EVAL_HOOK_SCRIPT)} ${shellQuote(link)}`)
-          .join(' && ');
-        const linkRes = await session.ssh.exec(linkCmd, { log, signal });
-        if (linkRes.exitCode !== 0) {
-          const detail = String(linkRes.stderr || '').trim() || `exitCode=${linkRes.exitCode ?? 'null'}`;
-          throw new Error(`绑定绕过脚本失败：${detail.slice(0, 120)}`);
-        }
-        state.tempPaths.push(...HOOK_LINKS);
-
-        const duration = probe.durationMs > 0 ? `，${probe.durationMs}ms` : '';
-        log(
-          `　容器就绪（${pod.host}:${pod.port}${duration}），已加载 ${state.evaluate.sourceClassNames.length} 关配置并部署 ${HOOK_FILES.length} 个脚本`,
-          MSG_LEVEL.INFO,
-        );
       },
 
+      /**
+       * Reuses or initializes the job container, probes once to materialize missing test sets when
+       * needed, writes the stage's expected output, triggers evaluation, and cleans up the staged
+       * answer directory without releasing the shared container.
+       */
       async solve(ctx, { session, state, deps }) {
-        const { detail, key, model, evalCtx, log, signal } = ctx;
+        const { key, model, log, signal } = ctx;
 
         if (state.skipReason) {
-          return {
-            status: 'skipped',
-            title: model.title,
-            reason: state.skipReason,
-          };
+          return { status: 'skipped', title: model.title, reason: state.skipReason };
         }
 
-        const { evaluator } = deps;
+        const gradeOptions = {
+          timeout: TIMING.linuxGradeTimeout,
+          requireChange: true,
+          log: message => log(message, MSG_LEVEL.INFO),
+          signal,
+        };
 
-        const stage = session.ssh.stageTarget(model.position);
-        if (stage.unused) {
-          log(`　第 ${stage.position} 关无评测脚本（${stage.rawEntry || '空'}），跳过`, MSG_LEVEL.INFO);
-          return {
-            status: 'skipped',
-            title: model.title,
-            reason: '该关卡未使用评测脚本（混合题目占位）',
-          };
-        }
+        let detail = ctx.detail;
+        let expected = await readExpected(detail, ctx, deps);
 
-        if (!stage.hasScript) {
+        const { pod, reused } = await ensureContainer(session, ctx, state);
+        const podLabel = pod?.host ? `${pod.host}:${pod.port}` : '已连接';
+
+        // Educoder only populates test_sets for some Linux labs after the stage has been graded once
+        // (whether locked or unlocked), so run a single dry evaluation to materialize them when absent.
+        if (expected === null) {
           log(
-            `　第 ${stage.position || '?'} 关未匹配评测脚本（共 ${stage.sourceClassNames.length} 槽位）`,
+            reused
+              ? `→ ${model.title}　复用容器（${podLabel}），暂无测试集，先空跑评测回填…`
+              : `　容器就绪（${podLabel}），暂无测试集，先空跑评测回填…`,
             MSG_LEVEL.WARN,
           );
+          if (state.dirtyAnswerDir) {
+            state.dirtyAnswerDir = !(await cleanupAnswerDir(session.ssh));
+          }
+
+          const passedAlready = await deps.evaluator.grade(detail, key, model, ctx.evalCtx, gradeOptions);
+          if (passedAlready) return { status: 'passed', title: model.title };
+
+          if (ctx.evalCtx?.lastDetail) detail = ctx.evalCtx.lastDetail;
+          expected = await readExpected(detail, ctx, deps);
+          if (expected === null) {
+            const fresh = await refreshDetail(deps, key, signal);
+            if (fresh) {
+              detail = fresh;
+              expected = await readExpected(detail, ctx, deps);
+            }
+          }
+          if (expected === null) {
+            log('　空跑后仍没有测试集，跳过', MSG_LEVEL.WARN);
+            return { status: 'skipped', title: model.title, reason: '平台未下发测试集（test_sets 为空）' };
+          }
+          log(`　已回填测试集（${expected.length} 字），写入答案并重新评测…`, MSG_LEVEL.INFO);
+        } else {
+          log(
+            reused
+              ? `→ ${model.title}　复用容器（${podLabel}），用平台测试集作答（${expected.length} 字）`
+              : `　容器就绪（${podLabel}），用平台测试集作答（${expected.length} 字）`,
+            MSG_LEVEL.INFO,
+          );
+        }
+
+        let answerWritten = false;
+        try {
+          state.dirtyAnswerDir = true;
+          await writeAnswer(session.ssh, expected, { log, signal });
+          answerWritten = true;
+
+          const passed = await deps.evaluator.grade(detail, key, model, ctx.evalCtx, gradeOptions);
+          if (passed) return { status: 'passed', title: model.title };
+
+          const latest = ctx.evalCtx?.lastDetail || detail;
+          const sets = Array.isArray(latest?.test_sets) ? latest.test_sets : [];
+          const failedCount = sets.filter(item => item.result === false).length;
           return {
             status: 'failed',
             title: model.title,
-            reason: `未匹配到第 ${stage.position || '?'} 关的评测脚本`,
+            reason: failedCount ? `评测未通过（${failedCount} 组用例未过）` : '评测未通过',
           };
+        } finally {
+          if (answerWritten) {
+            state.dirtyAnswerDir = !(await cleanupAnswerDir(session.ssh));
+          }
         }
-
-        log(`　第 ${stage.position} 关提交评测（${stage.scriptRel}）…`, MSG_LEVEL.INFO);
-        const passed = await evaluator.grade(detail, key, model, evalCtx, {
-          log: message => log(message, MSG_LEVEL.INFO),
-          signal,
-        });
-        if (passed) {
-          return { status: 'passed', title: model.title };
-        }
-
-        const failed = await evaluator.failedDetail(key, evalCtx, signal);
-        return {
-          status: 'failed',
-          title: model.title,
-          reason: failed.count
-            ? `Linux 环境评测未通过（${failed.count} 组用例未过）`
-            : 'Linux 环境评测未通过',
-        };
       },
 
-      async teardown({ session, state }) {
-        if (!session.ssh.isOpen()) return;
-        if (!Array.isArray(state.tempPaths) || !state.tempPaths.length) return;
-        const args = state.tempPaths.map(shellQuote).join(' ');
-        await session.ssh.exec(`rm -rf -- ${args}`).catch(() => {});
+      /** Destroys the job-scoped container instance once all stages of the homework have finished or aborted. */
+      async teardown({ session, state, log = () => {} }) {
+        if (state) {
+          state.containerReady = false;
+          state.pod = null;
+          state.dirtyAnswerDir = false;
+        }
+        await destroySession(session.ssh, log);
       },
     };
     return { linuxEnvStrategy };
@@ -2993,6 +3096,7 @@
     const { abortError } = mod_core_utils;
     const { CHALLENGE_TYPE } = mod_solver_classifier;
 
+    /** Builds the request body expected by `POST /tasks/{gameId}/choose_build.json`. */
     function choicePayload(challengeId, answer) {
       return {
         answer,
@@ -3046,6 +3150,7 @@
     const choiceStrategy = {
       name: CHALLENGE_TYPE.CHOICE,
 
+      /** Probes and submits choice answers, then waits for pass status or chains to the next step on hybrid stages. */
       async solve(ctx, { deps }) {
         const { api, evaluator } = deps;
         const { detail, key, model, evalCtx, hasMoreSteps, nextStep, log, signal } = ctx;
@@ -3099,6 +3204,7 @@
 
     const CODE_EXT = /\.(py|java|c|cpp|h|hpp|js|mjs|ts|go|rb|php|sh|sql|cs|m|kt|swift|rs)$/i;
 
+    /** Writes and grades a candidate file payload with bounded retries for non-fatal platform errors. */
     async function submitSource(ctx, evaluator, { content, path, label, attempts = TIMING.sourceAttempts }) {
       const { detail, key, model, evalCtx, log, signal } = ctx;
       for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -3194,7 +3300,8 @@
       return false;
     }
 
-    async function submitAiCode(ctx, { brief, feedback }, { answerSource, codeGenerator, evaluator }) {
+    /** Loads workspace templates, requests AI code generation for editable code files, and submits for grading. */
+    async function submitAiCode(ctx, { brief, feedback, previousFiles }, { answerSource, codeGenerator, evaluator }) {
       const { detail, key, model, evalCtx, log, signal } = ctx;
       const originals = await answerSource.readTemplates(key, model.paths, signal);
       const codePaths = model.paths.filter(path => CODE_EXT.test(path));
@@ -3205,10 +3312,11 @@
       const generated = await codeGenerator.solve(model, originals, targets, {
         brief,
         feedback,
+        previousFiles,
         log: message => log(message, MSG_LEVEL.INFO),
         signal,
       });
-      return evaluator.writeAndGrade(
+      const passed = await evaluator.writeAndGrade(
         detail,
         key,
         model,
@@ -3216,6 +3324,7 @@
         evalCtx,
         { log: message => log(message, MSG_LEVEL.INFO), signal },
       );
+      return { passed, generated };
     }
 
     /** Tier 4: AI code generation fallback with anti-regression retry feedback. */
@@ -3239,6 +3348,7 @@
 
       let reason = '代码评测未通过';
       let feedback = '';
+      let previousFiles = null;
       const maxAttempts = 1 + prefs.data.codeRetries;
       for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
         if (signal?.aborted) throw abortError();
@@ -3246,10 +3356,11 @@
           if (attempt > 1) {
             log(`　第 ${attempt - 1}/${maxAttempts - 1} 次自动重试（结合平台报错修正代码）…`, MSG_LEVEL.WARN);
           }
-          const passed = await submitAiCode(ctx, { brief, feedback }, { answerSource, codeGenerator, evaluator });
+          const { passed, generated } = await submitAiCode(ctx, { brief, feedback, previousFiles }, { answerSource, codeGenerator, evaluator });
           if (signal?.aborted) throw abortError();
           if (passed) return { status: 'passed', title: model.title };
-          const failed = await evaluator.failedDetail(key, evalCtx, signal);
+          previousFiles = generated;
+          const failed = await evaluator.failedDetail(key, evalCtx, signal, brief.cases);
           reason = failed.count ? `代码评测未通过（${failed.count} 组用例失败）` : '代码评测未通过';
           feedback = evaluator.buildFailureFeedback(failed);
         } catch (error) {
@@ -3274,6 +3385,7 @@
     const codeStrategy = {
       name: CHALLENGE_TYPE.CODE,
 
+      /** Executes the 4-tier solving cascade (checker -> reference -> lookup -> AI) for a programming stage. */
       async solve(ctx, { deps }) {
         const { key, model, signal } = ctx;
         const { answerSource } = deps;

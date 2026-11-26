@@ -41,8 +41,8 @@ export const Model = {
     const paths = splitPaths(challenge.path);
     const linuxEnv = env.tab_type === 3
       || /StarUML|VNC|Logisim/i.test(String(detail.mirror_name || ''));
-    // Unity 3D 仿真题：判分在 3D 场景内完成，结果由应用 postMessage 回传平台，
-    // 容器里没有判分脚本、也没有 test_sets，脚本无从下手。
+    // Unity 3D simulation challenges score inside the 3D scene and report back via postMessage,
+    // so neither container grading scripts nor test_sets are available for API automation.
     const unity = detail.unity_3d === true || detail.unity_3d === 'true';
     const sets = (detail.test_sets || []).map(item => ({ matchRule: item.matchRule || '' }));
     return {

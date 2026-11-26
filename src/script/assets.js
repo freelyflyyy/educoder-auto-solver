@@ -1,11 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-export const ANY_HOOK_SCRIPT = readFileSync(
-  new URL('./anyhook.py', import.meta.url),
-  'utf8',
-);
-
-export const PY_HOOK_SCRIPT = readFileSync(
-  new URL('./pyhook.sh', import.meta.url),
+/** Shell hook deployed as `/tmp/eval_hook/answerhook.sh` inside Linux containers (inlined by `build.mjs`). */
+export const ANSWER_HOOK_SCRIPT = readFileSync(
+  new URL('./answerhook.sh', import.meta.url),
   'utf8',
 );

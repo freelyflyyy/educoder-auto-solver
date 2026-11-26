@@ -10,6 +10,7 @@ import { CHALLENGE_TYPE } from '../classifier.js';
 export const unityStrategy = {
   name: CHALLENGE_TYPE.UNITY,
 
+  /** Logs an informative notice and skips Unity 3D stages gracefully. */
   solve(ctx) {
     const { model, log, onNotice } = ctx;
     onNotice('Unity 3D 仿真题需在 3D 场景内操作，已跳过', MSG_LEVEL.WARN);

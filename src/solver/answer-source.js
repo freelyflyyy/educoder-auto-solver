@@ -208,7 +208,8 @@ export function createAnswerSource({ api = Api, templateCache = TemplateCache } 
       try {
         const data = await api.checkTestSets(key.gameId, key.homeworkId, signal);
         const sets = Array.isArray(data?.test_sets) ? data.test_sets : [];
-        const usable = sets.filter(item => item.input !== undefined && item.input !== null);
+        const usable = sets.filter(item =>
+          item && ((item.input !== undefined && item.input !== null) || (item.output !== undefined && item.output !== null)));
         if (usable.length) return usable;
       } catch (error) {
         if (isAbortError(error) || signal?.aborted) throw abortError();

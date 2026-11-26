@@ -1,4 +1,4 @@
-export const VERSION = '1.1.0';
+export const VERSION = '1.2.0';
 export const API = 'https://data.educoder.net/api';
 export const AK = 'e9dd5b4322f9f7d83d009de9bfa100c3';
 export const SK = '2e3da06ae26ba9f76a5d8d355746f2fe';
@@ -9,6 +9,7 @@ export const TIMING = Object.freeze({
   passTimeout: 25000,
   stepGap: 300,
   codeGradeTimeout: 120000,
+  linuxGradeTimeout: 150000,
   commitSettle: 4000,
   sourceAttempts: 2,
   retryGap: 3000,
@@ -19,12 +20,12 @@ export const TIMING = Object.freeze({
   uiTick: 900,
   minEvalMs: 10000,
   scanConcurrency: 3,
-  envStartAttempts: 4,
-  envStartRetryGap: 20000,
   sshExecTimeout: 20000,
   sshGatewayPadding: 5000,
   sshConnectAttempts: 2,
   sshConnectRetryGap: 2000,
+  envStartAttempts: 5,
+  envStartBackoff: 3000,
 });
 
 export const STORAGE_KEYS = Object.freeze({

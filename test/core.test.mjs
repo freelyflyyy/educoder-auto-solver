@@ -206,18 +206,36 @@ test('Http retries GET once on timeout/network, never retries POST or ABORTED, a
     assert.equal(postCalls.length, 1);
   });
 
-  // ERROR_TEXT mapping
+  // ERROR_TEXT mapping (and status -1 preserving real server message when available)
+  let serverStatus = 401;
+  let serverMessage = '';
   await withGlobals({
     document: { cookie: '' },
     location: { search: '' },
     sessionStorage: { getItem: () => null },
     localStorage: { getItem: () => null },
     GM_xmlhttpRequest: opts => {
-      queueMicrotask(() => opts.onload({ status: 200, response: { status: 401 } }));
+      queueMicrotask(() => opts.onload({
+        status: 200,
+        response: serverMessage ? { status: serverStatus, message: serverMessage } : { status: serverStatus },
+      }));
       return { abort() {} };
     },
   }, async () => {
     await assert.rejects(Http.get('/tasks/1.json'), err => err.code === 401 && err.message === ERROR_TEXT[401]);
+
+    serverStatus = -1;
+    serverMessage = '当前已开启的实训过多，请先关闭后再试';
+    await assert.rejects(
+      Http.get('/myshixuns/ms1/start.json'),
+      err => err.code === -1 && err.message === '当前已开启的实训过多，请先关闭后再试',
+    );
+
+    serverMessage = '';
+    await assert.rejects(
+      Http.get('/myshixuns/ms1/start.json'),
+      err => err.code === -1 && err.message === ERROR_TEXT[-1],
+    );
   });
 
   // Abort does not retry GET

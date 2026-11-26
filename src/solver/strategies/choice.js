@@ -2,6 +2,7 @@ import { MSG_LEVEL, TIMING } from '../../core/constants.js';
 import { abortError } from '../../core/utils.js';
 import { CHALLENGE_TYPE } from '../classifier.js';
 
+/** Builds the request body expected by `POST /tasks/{gameId}/choose_build.json`. */
 function choicePayload(challengeId, answer) {
   return {
     answer,
@@ -55,6 +56,7 @@ export async function submitChoices(detail, key, count, api, signal = null) {
 export const choiceStrategy = {
   name: CHALLENGE_TYPE.CHOICE,
 
+  /** Probes and submits choice answers, then waits for pass status or chains to the next step on hybrid stages. */
   async solve(ctx, { deps }) {
     const { api, evaluator } = deps;
     const { detail, key, model, evalCtx, hasMoreSteps, nextStep, log, signal } = ctx;

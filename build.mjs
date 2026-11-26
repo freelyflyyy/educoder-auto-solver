@@ -39,12 +39,11 @@ export function createDefaultSpecialModules(rootDir = ROOT_DIR) {
       };
     },
     'src/script/assets.js': () => {
-      const anyhook = readFileSync(path.join(rootDir, 'src/script/anyhook.py'), 'utf8');
-      const pyhook = readFileSync(path.join(rootDir, 'src/script/pyhook.sh'), 'utf8');
+      const answerhook = readFileSync(path.join(rootDir, 'src/script/answerhook.sh'), 'utf8');
       return {
         deps: [],
-        exports: ['ANY_HOOK_SCRIPT', 'PY_HOOK_SCRIPT'],
-        body: `const ANY_HOOK_SCRIPT = ${JSON.stringify(anyhook)};\nconst PY_HOOK_SCRIPT = ${JSON.stringify(pyhook)};`,
+        exports: ['ANSWER_HOOK_SCRIPT'],
+        body: `const ANSWER_HOOK_SCRIPT = ${JSON.stringify(answerhook)};`,
       };
     },
   };

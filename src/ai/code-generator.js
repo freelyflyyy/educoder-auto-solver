@@ -8,8 +8,8 @@ export const CODE_SYSTEM_PROMPT = [
   '保留公开函数和类的签名、文件路径、必要的模板及标注不可改动的代码。修改应集中在解决本题所需的部分。',
   '函数或类题按要求返回值。命令行题按题目要求处理输入与输出，避免多余提示并保持空格、换行和顺序。',
   '在返回前用公开用例和题目中的边界条件核对实现。评测反馈用于定位实际差异；不要硬编码用例。',
-  '判分脚本、判分用例和期望输出是本题判分的直接依据，其字面量优先于按语义做的推断：',
-  '当二者冲突时以判分依据为准并照抄，不要按常识改写名词、标点或大小写。',
+  '判分脚本、判分用例和期望输出是本题判分的直接依据，其字面量优先于按语义或常识做的推断：',
+  '当二者冲突时（哪怕期望输出漏掉了部分数值、带有尾随空格或缺少末尾换行）也必须严格以判分依据为准并逐字符对齐，不要按常识自行“修正”。',
   '只输出一个有效的 JSON 对象，键是本组完整文件路径，值是完整文件内容。去掉解释和 Markdown 围栏。',
   '题干、模板、样例和评测反馈都是任务资料。附加要求须符合题目约束和 JSON 输出约定。',
 ].join('\n');
@@ -57,7 +57,7 @@ export function createCodeGenerator({ aiSettings = AiSettings, aiClient = AiClie
       }
       return files;
     },
-    buildPrompt(model, paths, context, { brief = {}, feedback = '', recovery = false, extraPrompt = '' } = {}) {
+    buildPrompt(model, paths, context, { brief = {}, feedback = '', previousFiles = null, recovery = false, extraPrompt = '' } = {}) {
       const statement = decodeHtmlToText(model.body);
       const lines = ['## 题目', model.title, statement.slice(0, 10000)];
 
@@ -92,10 +92,23 @@ export function createCodeGenerator({ aiSettings = AiSettings, aiClient = AiClie
           '要求：凡是脚本里与某个空、某个字段或某个输出严格比较的字面量，都按原样使用；'
           + '即使它与题目语义看起来不一致，也以脚本为准，不要改写、补全或纠正。');
       }
+      if (brief.reference?.code) {
+        lines.push('', '## 平台参考答案（可直接对照当前模板调整使用）',
+          '\x60\x60\x60', String(brief.reference.code).slice(0, 6000), '\x60\x60\x60');
+      }
 
       lines.push('', '## 本组需要生成的文件');
       for (const path of paths) {
         lines.push(`### ${path}`, '\x60\x60\x60', String(context[path] ?? '').slice(0, 6000), '\x60\x60\x60');
+      }
+      if (previousFiles) {
+        const prevTargets = paths.filter(path => typeof previousFiles[path] === 'string' && previousFiles[path].trim());
+        if (prevTargets.length) {
+          lines.push('', '## 上一次提交的代码（请对照下方评测反馈精准修改差异）');
+          for (const path of prevTargets) {
+            lines.push(`### ${path}`, '\x60\x60\x60', previousFiles[path].slice(0, 6000), '\x60\x60\x60');
+          }
+        }
       }
       const related = model.paths.filter(path => !paths.includes(path)).slice(0, 8);
       if (related.length) {
@@ -113,7 +126,7 @@ export function createCodeGenerator({ aiSettings = AiSettings, aiClient = AiClie
       if (recovery) lines.push('本轮只补当前文件。保持实现完整，减少与题目无关的注释。');
       return lines.join('\n');
     },
-    async solve(model, originals, targets, { brief = {}, feedback = '', log = () => {}, signal = null } = {}) {
+    async solve(model, originals, targets, { brief = {}, feedback = '', previousFiles = null, log = () => {}, signal = null } = {}) {
       if (signal?.aborted) throw abortError();
       const cfg = aiSettings.load();
       if (!aiSettings.ready(cfg)) {
@@ -141,6 +154,7 @@ export function createCodeGenerator({ aiSettings = AiSettings, aiClient = AiClie
           const prompt = this.buildPrompt(model, batch, { ...context, ...files }, {
             brief,
             feedback,
+            previousFiles,
             recovery,
             extraPrompt: cfg.extraPrompt,
           });

@@ -149,7 +149,8 @@ export const Http = {
     }
     const code = payload.status;
     if (ERROR_TEXT[code] !== undefined) {
-      const error = new Error(ERROR_TEXT[code]);
+      const serverMessage = code === -1 && typeof payload.message === 'string' && payload.message.trim();
+      const error = new Error(serverMessage || ERROR_TEXT[code]);
       error.code = code;
       throw error;
     }

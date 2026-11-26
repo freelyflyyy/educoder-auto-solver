@@ -5,24 +5,8 @@ import { abortError, isAbortError } from '../src/core/utils.js';
 import {
   shellQuote,
   encodeBase64,
-  isPlaceholderEvaluateEntry,
-  parseEvaluateScript,
-  resolveStageTarget,
   createSshSession,
 } from '../src/ssh/session.js';
-
-const SAMPLE_EVALUATE_SH = `#!/bin/bash
-
-cd /data/workspace/myshixun
-
-# 待执行的评测文件
-sourceClassNames=("secret/evaluate/evaluate_detail_1.py" "secret/evaluate/evaluate_detail_2.py" "secret/evaluate/evaluate_detail_3.py" "secret/evaluate/evaluate_detail_4.py" "secret/evaluate/evaluate_detail_5.py")
-
-# 执行命令
-executeCommand="python3"
-
-execute $1
-`;
 
 function makeStageModel(overrides = {}) {
   return {
@@ -35,7 +19,7 @@ function makeStageModel(overrides = {}) {
   };
 }
 
-test('shellQuote, encodeBase64, parseEvaluateScript, and resolveStageTarget behave as clean pure helpers', () => {
+test('shellQuote and encodeBase64 behave as clean pure helpers', () => {
   assert.equal(shellQuote('/data/workspace/my file.py'), `'/data/workspace/my file.py'`);
   assert.equal(shellQuote(`a'b`), `'a'\\''b'`);
   assert.equal(shellQuote(`$HOME \`id\``), `'$HOME \`id\`'`);
@@ -50,149 +34,9 @@ test('shellQuote, encodeBase64, parseEvaluateScript, and resolveStageTarget beha
   const large = new Uint8Array(42 * 1024);
   for (let i = 0; i < large.length; i += 1) large[i] = i & 0xff;
   assert.deepEqual(new Uint8Array(Buffer.from(encodeBase64(large), 'base64')), large);
-
-  const parsed = parseEvaluateScript(SAMPLE_EVALUATE_SH);
-  assert.deepEqual(parsed, {
-    workdir: '/data/workspace/myshixun',
-    executeCommand: 'python3',
-    sourceClassNames: [
-      'secret/evaluate/evaluate_detail_1.py',
-      'secret/evaluate/evaluate_detail_2.py',
-      'secret/evaluate/evaluate_detail_3.py',
-      'secret/evaluate/evaluate_detail_4.py',
-      'secret/evaluate/evaluate_detail_5.py',
-    ],
-  });
-
-  const multiline = [
-    '#!/bin/bash\r\n',
-    'cd "/data/workspace/custom dir/"\r\n',
-    'executeCommand=\'bash -e\'\r\n',
-    'sourceClassNames=(\r\n',
-    '  \'stage 1.py\' # first stage comment\r\n',
-    '  # full comment line\r\n',
-    '  "dir/stage#2.py"\r\n',
-    '  bare_stage_3.sh\r\n',
-    ')\r\n',
-  ].join('');
-  assert.deepEqual(parseEvaluateScript(multiline), {
-    workdir: '/data/workspace/custom dir/',
-    executeCommand: 'bash -e',
-    sourceClassNames: [
-      'stage 1.py',
-      'dir/stage#2.py',
-      'bare_stage_3.sh',
-    ],
-  });
-
-  assert.deepEqual(parseEvaluateScript('#!/bin/bash\necho noop\n'), {
-    workdir: '/data/workspace/myshixun',
-    executeCommand: '',
-    sourceClassNames: [],
-  });
-
-  assert.deepEqual(resolveStageTarget(parsed, 1), {
-    ...parsed,
-    position: 1,
-    inRange: true,
-    unused: false,
-    hasScript: true,
-    rawEntry: 'secret/evaluate/evaluate_detail_1.py',
-    scriptRel: 'secret/evaluate/evaluate_detail_1.py',
-    scriptAbs: '/data/workspace/myshixun/secret/evaluate/evaluate_detail_1.py',
-  });
-  assert.deepEqual(resolveStageTarget(parsed, 0), {
-    ...parsed,
-    position: 0,
-    inRange: false,
-    unused: false,
-    hasScript: false,
-    rawEntry: '',
-    scriptRel: '',
-    scriptAbs: '',
-  });
-  assert.deepEqual(resolveStageTarget(parsed, 6), {
-    ...parsed,
-    position: 6,
-    inRange: false,
-    unused: false,
-    hasScript: false,
-    rawEntry: '',
-    scriptRel: '',
-    scriptAbs: '',
-  });
-  assert.equal(resolveStageTarget({
-    workdir: '/data/workspace/sub/',
-    executeCommand: 'python3',
-    sourceClassNames: ['/opt/eval/s1.py', 'rel/s2.py'],
-  }, 1).scriptAbs, '/opt/eval/s1.py');
 });
 
-test('parseEvaluateScript & resolveStageTarget handle mixed empty/"1" placeholders and parentheses in quoted filenames', () => {
-  const mixedScript = [
-    '#!/bin/bash',
-    'cd /data/workspace/myshixun',
-    'sourceClassNames=("" "1" "" "newtest3/test3(1).py" "1" "step6/run.py" "step7/run.py" "step8/run.py" "step9/run.py" "step10/run.py" "step11/run.py" "1" "newtest7/test7.py" "")',
-    'executeCommand="python3"',
-  ].join('\n');
-
-  const parsed = parseEvaluateScript(mixedScript);
-  assert.deepEqual(parsed.sourceClassNames, [
-    '',
-    '1',
-    '',
-    'newtest3/test3(1).py',
-    '1',
-    'step6/run.py',
-    'step7/run.py',
-    'step8/run.py',
-    'step9/run.py',
-    'step10/run.py',
-    'step11/run.py',
-    '1',
-    'newtest7/test7.py',
-    '',
-  ]);
-  assert.equal(parsed.sourceClassNames.length, 14);
-  assert.equal(parsed.executeCommand, 'python3');
-
-  assert.equal(isPlaceholderEvaluateEntry(''), true);
-  assert.equal(isPlaceholderEvaluateEntry('  '), true);
-  assert.equal(isPlaceholderEvaluateEntry('1'), true);
-  assert.equal(isPlaceholderEvaluateEntry('step6/run.py'), false);
-
-  for (const [pos, expectedRaw] of [[1, ''], [2, '1'], [3, ''], [5, '1'], [12, '1'], [14, '']]) {
-    const stage = resolveStageTarget(parsed, pos);
-    assert.equal(stage.inRange, true);
-    assert.equal(stage.unused, true);
-    assert.equal(stage.hasScript, false);
-    assert.equal(stage.rawEntry, expectedRaw);
-    assert.equal(stage.scriptRel, '');
-    assert.equal(stage.scriptAbs, '');
-  }
-
-  const stage4 = resolveStageTarget(parsed, 4);
-  assert.equal(stage4.inRange, true);
-  assert.equal(stage4.unused, false);
-  assert.equal(stage4.hasScript, true);
-  assert.equal(stage4.scriptRel, 'newtest3/test3(1).py');
-  assert.equal(stage4.scriptAbs, '/data/workspace/myshixun/newtest3/test3(1).py');
-
-  const stage6 = resolveStageTarget(parsed, 6);
-  assert.equal(stage6.scriptRel, 'step6/run.py');
-  assert.equal(stage6.scriptAbs, '/data/workspace/myshixun/step6/run.py');
-
-  const stage13 = resolveStageTarget(parsed, 13);
-  assert.equal(stage13.scriptRel, 'newtest7/test7.py');
-  assert.equal(stage13.scriptAbs, '/data/workspace/myshixun/newtest7/test7.py');
-
-  const stage15 = resolveStageTarget(parsed, 15);
-  assert.equal(stage15.inRange, false);
-  assert.equal(stage15.unused, false);
-  assert.equal(stage15.hasScript, false);
-});
-
-test('createSshSession.open validates params, is idempotent per session, retries startEnv, and honors close()', async () => {
+test('createSshSession.open validates params, is idempotent per session, requests the environment once, and honors close()', async () => {
   const key = { gameId: 'g1', homeworkId: 1 };
 
   const missingSession = createSshSession({ api: {}, sshClient: {} });
@@ -238,12 +82,11 @@ test('createSshSession.open validates params, is idempotent per session, retries
   session.close();
   assert.equal(session.isOpen(), false);
   assert.equal(session.currentPod(), null);
-  assert.equal(session.evaluateConfig(), null);
   const pod3 = await session.open(makeStageModel(), key);
   assert.equal(envCalls, 2);
   assert.equal(pod3.host, '47.99.1.2');
 
-  // Retryable errors (-2, TIMEOUT, NETWORK) retry and VNC-only exhausts attempts
+  // Linear backoff retries on congestion/cold-start, recovery on retry, and VNC-only reclamation
   const origSetTimeout = globalThis.setTimeout;
   const sleepDurations = [];
   globalThis.setTimeout = (fn, ms, ...args) => {
@@ -251,78 +94,146 @@ test('createSshSession.open validates params, is idempotent per session, retries
     return origSetTimeout(fn, Math.min(ms, 5), ...args);
   };
   try {
+    // 1. Exhausting retryable congestion (-2) attempts retries with 4s/8s/12s linear backoff and WARN logs
     let attempts = 0;
     const retryLogs = [];
-    const retrySession = createSshSession({
+    const busySession = createSshSession({
       api: {
         async startEnv() {
           attempts += 1;
-          if (attempts === 1) {
-            const err = new Error('平台评测队列繁忙');
-            err.code = -2;
-            throw err;
-          }
-          if (attempts === 2) {
-            const err = new Error('请求超时');
-            err.code = 'TIMEOUT';
-            throw err;
-          }
-          return {
-            status: 0,
-            data: { ssh_address: '8.8.8.8', port: 22, username: 'u', password: 'p' },
-          };
+          const err = new Error('当前平台资源紧张，请稍后重试');
+          err.code = -2;
+          throw err;
         },
       },
       sshClient: {},
     });
-    const okPod = await retrySession.open(makeStageModel(), key, {
-      log: (m, l) => retryLogs.push([m, l]),
-    });
-    assert.equal(attempts, 3);
-    assert.equal(okPod.host, '8.8.8.8');
-    assert.ok(retryLogs.some(([msg, lvl]) => msg.includes('（1/3）') && lvl === MSG_LEVEL.WARN));
-    assert.ok(retryLogs.some(([msg, lvl]) => msg.includes('（2/3）') && lvl === MSG_LEVEL.WARN));
+    await assert.rejects(
+      busySession.open(makeStageModel(), key, { log: (m, l) => retryLogs.push([m, l]) }),
+      /容器启动失败：当前平台资源紧张/,
+    );
+    assert.equal(attempts, TIMING.envStartAttempts);
+    assert.deepEqual(
+      sleepDurations,
+      Array.from({ length: TIMING.envStartAttempts - 1 }, (_, i) => (i + 1) * TIMING.envStartBackoff),
+    );
+    assert.equal(
+      retryLogs.filter(([m, l]) => m.includes('容器申请未就绪') && l === MSG_LEVEL.WARN).length,
+      TIMING.envStartAttempts - 1,
+    );
 
+    // 2. Recovering on retry succeeds and stops further retries
+    sleepDurations.length = 0;
+    let recoverCalls = 0;
+    const recoverSession = createSshSession({
+      api: {
+        async startEnv() {
+          recoverCalls += 1;
+          if (recoverCalls === 1) {
+            const err = new Error('网络超时');
+            err.code = 'TIMEOUT';
+            throw err;
+          }
+          return { status: 0, data: { ssh_address: '8.8.8.8', port: 22, username: 'u', password: 'p' } };
+        },
+      },
+      sshClient: {},
+    });
+    const recoveredPod = await recoverSession.open(makeStageModel(), key);
+    assert.equal(recoveredPod.host, '8.8.8.8');
+    assert.equal(recoverCalls, 2);
+    assert.deepEqual(sleepDurations, [TIMING.envStartBackoff]);
+
+    // 3. VNC-only response (status 0 without SSH host) retries and reclaims once after attempts exhaust
     sleepDurations.length = 0;
     let vncAttempts = 0;
+    const vncDeletes = [];
     const vncSession = createSshSession({
       api: {
         async startEnv() {
           vncAttempts += 1;
           return { status: 0, data: {} };
         },
+        async exitDeletePod(shixunId, params, signal) {
+          vncDeletes.push({ shixunId, params, signal });
+        },
       },
       sshClient: {},
     });
     await assert.rejects(vncSession.open(makeStageModel(), key), /容器启动失败/);
     assert.equal(vncAttempts, TIMING.envStartAttempts);
-    assert.equal(
-      sleepDurations.filter(ms => ms === TIMING.envStartRetryGap).length,
-      TIMING.envStartAttempts - 1,
-    );
+    assert.equal(vncDeletes.length, 1);
+    assert.deepEqual(vncDeletes[0], {
+      shixunId: 'ms-1',
+      params: { envId: 88, gameDbId: 555, tabType: 3, homeworkId: 1 },
+      signal: undefined,
+    });
+
+    // 4. Status -1 (Educoder pod-quota/start error) retries with linear backoff and can recover;
+    // hard errors 403 / -102 fail immediately without sleeping
+    sleepDurations.length = 0;
+    let quotaCalls = 0;
+    const quotaSession = createSshSession({
+      api: {
+        async startEnv() {
+          quotaCalls += 1;
+          if (quotaCalls <= 2) {
+            const err = new Error('当前实训环境资源紧张或容器已满');
+            err.code = -1;
+            throw err;
+          }
+          return { status: 0, data: { ssh_address: '9.9.9.9', port: 22, username: 'u', password: 'p' } };
+        },
+      },
+      sshClient: {},
+    });
+    const quotaPod = await quotaSession.open(makeStageModel(), key);
+    assert.equal(quotaPod.host, '9.9.9.9');
+    assert.equal(quotaCalls, 3);
+    assert.deepEqual(sleepDurations, [TIMING.envStartBackoff, 2 * TIMING.envStartBackoff]);
+
+    sleepDurations.length = 0;
+    let forbiddenCalls = 0;
+    const errSession = createSshSession({
+      api: {
+        async startEnv() {
+          forbiddenCalls += 1;
+          const err = new Error('无权访问');
+          err.code = 403;
+          throw err;
+        },
+      },
+      sshClient: {},
+    });
+    await assert.rejects(errSession.open(makeStageModel(), key), /容器启动失败：无权访问/);
+    assert.equal(forbiddenCalls, 1);
+    assert.equal(sleepDurations.length, 0);
+
+    let sigErrCalls = 0;
+    const badSigSession = createSshSession({
+      api: {
+        async startEnv() {
+          sigErrCalls += 1;
+          const err = new Error('接口签名校验未通过');
+          err.code = -102;
+          throw err;
+        },
+      },
+      sshClient: {},
+    });
+    await assert.rejects(badSigSession.open(makeStageModel(), key), /容器启动失败：接口签名校验未通过/);
+    assert.equal(sigErrCalls, 1);
+    assert.equal(sleepDurations.length, 0);
   } finally {
     globalThis.setTimeout = origSetTimeout;
   }
 
-  // Non-retryable 403 and 401 auth passthrough
-  let forbiddenCalls = 0;
-  const errSession = createSshSession({
-    api: {
-      async startEnv() {
-        forbiddenCalls += 1;
-        const err = new Error('无权访问');
-        err.code = 403;
-        throw err;
-      },
-    },
-    sshClient: {},
-  });
-  await assert.rejects(errSession.open(makeStageModel(), key), /容器启动失败：无权访问/);
-  assert.equal(forbiddenCalls, 1);
-
+  // 5. 401 auth passthrough does not retry
+  let authCalls = 0;
   const authSession = createSshSession({
     api: {
       async startEnv() {
+        authCalls += 1;
         const err = new Error('登录状态已过期');
         err.code = 401;
         throw err;
@@ -331,12 +242,15 @@ test('createSshSession.open validates params, is idempotent per session, retries
     sshClient: {},
   });
   await assert.rejects(authSession.open(makeStageModel(), key), err => err.code === 401);
+  assert.equal(authCalls, 1);
 
-  // AbortSignal cancels retry sleep promptly
-  const ac = new AbortController();
+  // 6. Pre-aborted AbortSignal skips startEnv and mid-backoff abort cancels promptly
+  const preAborted = new AbortController();
+  let abortedStartCalls = 0;
   const abortSession = createSshSession({
     api: {
       async startEnv() {
+        abortedStartCalls += 1;
         const err = new Error('网络错误');
         err.code = 'NETWORK';
         throw err;
@@ -344,16 +258,92 @@ test('createSshSession.open validates params, is idempotent per session, retries
     },
     sshClient: {},
   });
-  const startedAt = Date.now();
-  setTimeout(() => ac.abort(), 20);
+  preAborted.abort();
   await assert.rejects(
-    abortSession.open(makeStageModel(), key, { signal: ac.signal }),
+    abortSession.open(makeStageModel(), key, { signal: preAborted.signal }),
     err => isAbortError(err),
   );
-  assert.ok(Date.now() - startedAt < 250, 'abort during env retry sleep must reject promptly');
+  assert.equal(abortedStartCalls, 0);
+
+  const midAbort = new AbortController();
+  const startedAt = Date.now();
+  setTimeout(() => midAbort.abort(), 15);
+  await assert.rejects(
+    abortSession.open(makeStageModel(), key, { signal: midAbort.signal }),
+    err => isAbortError(err),
+  );
+  assert.ok(Date.now() - startedAt < 500, 'abort during retry sleep must cancel promptly');
 });
 
-test('createSshSession.exec, probe, readFile, loadEvaluate, and stageTarget operate scoped to one session', async () => {
+test('createSshSession.destroy releases leased pod idempotently and ignores remote teardown failures', async () => {
+  const key = { gameId: 'g1', homeworkId: 9 };
+
+  // 1. No-op when no pod has ever been opened
+  let idleDeleteCalls = 0;
+  const idleSession = createSshSession({
+    api: {
+      async exitDeletePod() { idleDeleteCalls += 1; },
+    },
+    sshClient: {},
+  });
+  assert.equal(await idleSession.destroy(), false);
+  assert.equal(idleDeleteCalls, 0);
+
+  // 2. Destroying an open session clears state, calls exitDeletePod once without signal, and is idempotent
+  const deleteCalls = [];
+  const logs = [];
+  const session = createSshSession({
+    api: {
+      async startEnv() {
+        return {
+          status: 0,
+          data: { ssh_address: '47.99.1.9', port: 22022, username: 'root', password: 'pw' },
+        };
+      },
+      async exitDeletePod(shixunId, params, signal) {
+        deleteCalls.push({ shixunId, params, signal });
+        return { status: 0 };
+      },
+    },
+    sshClient: {},
+  });
+  await session.open(makeStageModel(), key);
+  assert.equal(session.isOpen(), true);
+  assert.equal(await session.destroy({ log: (m, l) => logs.push([m, l]) }), true);
+  assert.equal(session.isOpen(), false);
+  assert.equal(session.currentPod(), null);
+  assert.deepEqual(deleteCalls, [{
+    shixunId: 'ms-1',
+    params: { envId: 88, gameDbId: 555, tabType: 3, homeworkId: 9 },
+    signal: undefined,
+  }]);
+  assert.ok(logs.some(([m, l]) => m.includes('已释放容器实例') && l === MSG_LEVEL.INFO));
+  assert.equal(await session.destroy({ log: (m, l) => logs.push([m, l]) }), false);
+  assert.equal(deleteCalls.length, 1);
+
+  // 3. Remote exitDeletePod errors degrade to a WARN log without throwing or retaining stale state
+  const warnLogs = [];
+  const failingSession = createSshSession({
+    api: {
+      async startEnv() {
+        return {
+          status: 0,
+          data: { ssh_address: '47.99.1.10', port: 22022, username: 'root', password: 'pw' },
+        };
+      },
+      async exitDeletePod() {
+        throw new Error('pod already recycled');
+      },
+    },
+    sshClient: {},
+  });
+  await failingSession.open(makeStageModel(), key);
+  assert.equal(await failingSession.destroy({ log: (m, l) => warnLogs.push([m, l]) }), false);
+  assert.equal(failingSession.isOpen(), false);
+  assert.ok(warnLogs.some(([m, l]) => m.includes('释放容器失败：pod already recycled') && l === MSG_LEVEL.WARN));
+});
+
+test('createSshSession.exec, probe, and readFile operate scoped to one session', async () => {
   const key = { gameId: 'g1', homeworkId: 1 };
   const okApi = {
     async startEnv() {
@@ -433,18 +423,13 @@ test('createSshSession.exec, probe, readFile, loadEvaluate, and stageTarget oper
     durationMs: 12,
   });
 
-  // 2. readFile quotes paths, checks errors/truncation, and loadEvaluate + stageTarget reuse within session
+  // 2. readFile quotes paths, checks errors/truncation, and close() resets open state
   const commands = [];
-  let evalReads = 0;
   const session = createSshSession({
     api: okApi,
     sshClient: {
       async exec(_pod, command) {
         commands.push(command);
-        if (command.includes('/data/protectspace/evaluate.sh')) {
-          evalReads += 1;
-          return { stdout: SAMPLE_EVALUATE_SH, stderr: '', exitCode: 0, truncated: false };
-        }
         if (command.includes('missing.py')) {
           return { stdout: '', stderr: 'No such file', exitCode: 1, truncated: false };
         }
@@ -456,19 +441,6 @@ test('createSshSession.exec, probe, readFile, loadEvaluate, and stageTarget oper
     },
   });
   await session.open(makeStageModel(), key);
-  assert.throws(() => session.stageTarget(1), /尚未加载 evaluate\.sh/);
-
-  await session.loadEvaluate();
-  await session.loadEvaluate();
-  assert.equal(evalReads, 1, 'loadEvaluate should read evaluate.sh once per session');
-  assert.equal(commands[0], `cat -- '/data/protectspace/evaluate.sh'`);
-
-  const stage1 = session.stageTarget(1);
-  const stage3 = session.stageTarget(3);
-  assert.equal(stage1.scriptRel, 'secret/evaluate/evaluate_detail_1.py');
-  assert.equal(stage1.scriptAbs, '/data/workspace/myshixun/secret/evaluate/evaluate_detail_1.py');
-  assert.equal(stage3.scriptRel, 'secret/evaluate/evaluate_detail_3.py');
-  assert.equal(stage3.scriptAbs, '/data/workspace/myshixun/secret/evaluate/evaluate_detail_3.py');
 
   assert.equal(await session.readFile(`/tmp/a'b.txt`), 'ok');
   assert.equal(commands.at(-1), `cat -- '/tmp/a'\\''b.txt'`);
@@ -476,8 +448,8 @@ test('createSshSession.exec, probe, readFile, loadEvaluate, and stageTarget oper
   await assert.rejects(session.readFile('/tmp/huge.py'), /已被截断/);
 
   session.close();
-  assert.equal(session.evaluateConfig(), null);
-  assert.throws(() => session.stageTarget(1), /尚未加载 evaluate\.sh/);
+  assert.equal(session.isOpen(), false);
+  await assert.rejects(session.readFile('/tmp/a.txt'), /实验容器尚未初始化/);
 });
 
 test('createSshSession.writeFile handles small/large chunked uploads, chmod 577, special paths, validation, and errors', async () => {

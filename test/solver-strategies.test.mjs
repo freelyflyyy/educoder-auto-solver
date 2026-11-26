@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MSG_LEVEL } from '../src/core/constants.js';
-import { ANY_HOOK_SCRIPT, PY_HOOK_SCRIPT } from '../src/script/assets.js';
+import { MSG_LEVEL, TIMING } from '../src/core/constants.js';
+import { ANSWER_HOOK_SCRIPT } from '../src/script/assets.js';
 import { CHALLENGE_TYPE, classifyChallenge } from '../src/solver/classifier.js';
 import { unityStrategy } from '../src/solver/strategies/unity.js';
 import { linuxEnvStrategy } from '../src/solver/strategies/linux-env.js';
@@ -90,7 +90,7 @@ test('classifyChallenge classifies every challenge type and hybrid combination d
   );
 });
 
-test('unityStrategy and linuxEnvStrategy operate cleanly with setup/solve/teardown and mixed placeholders', async () => {
+test('unityStrategy and linuxEnvStrategy reuse one container across stages and destroy it on teardown', async () => {
   const { ctx: unityCtx, logs: uLogs, notices: uNotices } = makeCtx({
     model: makeModel({ title: 'Unity 仿真', unity: true }),
   });
@@ -99,239 +99,352 @@ test('unityStrategy and linuxEnvStrategy operate cleanly with setup/solve/teardo
   assert.equal(uLogs[0][1], MSG_LEVEL.WARN);
   assert.equal(uNotices[0][1], MSG_LEVEL.WARN);
 
-  // 1. Unconfigured SSH: setup records skipReason once and solve returns skipped cleanly across stages
+  // 1. Unconfigured SSH: setup records skipReason and solve skips cleanly
   const prefs = createPrefs();
   prefs.data = { ...prefs.defaults };
   const uncfgState = {};
   const { ctx: lCtx1, logs: lLogs1, notices: lNotices1 } = makeCtx({
     model: makeModel({ title: 'StarUML 建模', linuxEnv: true }),
   });
-  await linuxEnvStrategy.setup(lCtx1, { session: { ssh: { isOpen: () => false } }, state: uncfgState, deps: { prefs } });
+  await linuxEnvStrategy.setup(lCtx1, { state: uncfgState, deps: { prefs } });
   assert.equal(lNotices1.length, 1);
   assert.equal(lLogs1[0][1], MSG_LEVEL.WARN);
   const lRes1 = await linuxEnvStrategy.solve(lCtx1, { session: {}, state: uncfgState, deps: {} });
   assert.equal(lRes1.status, 'skipped');
   assert.match(lRes1.reason, /未配置 SSH/);
 
-  // 2. Configured SSH: setup opens pod, probes, loads evaluate, writes scripts & links;
-  //    solve triggers evaluator.grade (or skips placeholder); teardown cleans dir & symlinks
+  // 2. Shared mock tracking job-scoped container reuse across multiple stages
   prefs.data = { ...prefs.defaults, sshBase: 'https://ssh.example.workers.dev', sshKey: '0123456789abcdef' };
   const calls = [];
+  const writes = new Map();
   let isOpen = false;
+  let pod = null;
+  let destroyCount = 0;
+  let openShouldThrow = false;
   const mockSsh = {
     isOpen: () => isOpen,
+    currentPod: () => pod,
     async open() {
-      isOpen = true;
       calls.push('open');
-      return { host: '1.2.3.4', port: 2222 };
+      if (openShouldThrow) throw new Error('容器启动失败：当前无可用实例');
+      isOpen = true;
+      pod = { host: '1.2.3.4', port: 2222 };
+      return pod;
     },
-    async probe() {
-      calls.push('probe');
-      return { ok: true, detail: 'hello', durationMs: 25 };
-    },
-    async loadEvaluate() {
-      calls.push('loadEvaluate');
-      return { workdir: '/data/workspace/myshixun', executeCommand: 'python3', sourceClassNames: ['', '1', 's3.py'] };
-    },
+    async probe() { calls.push('probe'); return { ok: true, detail: 'hello', durationMs: 25 }; },
     async writeFile(absPath, content, options) {
-      calls.push(`writeFile:${absPath}:${options?.mode}`);
-      const expectedContent = absPath === '/tmp/eval_hook/anyhook.py'
-        ? ANY_HOOK_SCRIPT
-        : PY_HOOK_SCRIPT;
-      assert.ok(['/tmp/eval_hook/anyhook.py', '/tmp/eval_hook/pyhook.sh'].includes(absPath));
-      assert.equal(content, expectedContent);
-      assert.equal(options?.mode, '755');
+      calls.push(`writeFile:${absPath}:${options?.mode ?? ''}`);
+      writes.set(absPath, content);
+      if (absPath === '/tmp/eval_hook/answerhook.sh') assert.equal(content, ANSWER_HOOK_SCRIPT);
       return { bytes: Buffer.byteLength(content, 'utf8'), chunks: 1 };
     },
-    stageTarget(pos) {
-      calls.push(`stageTarget:${pos}`);
-      if (pos === 1 || pos === 2) {
-        const rawEntry = pos === 1 ? '' : '1';
-        return {
-          position: pos,
-          inRange: true,
-          unused: true,
-          hasScript: false,
-          rawEntry,
-          sourceClassNames: ['', '1', 's3.py'],
-          scriptRel: '',
-          scriptAbs: '',
-        };
-      }
-      if (pos === 3) {
-        return {
-          position: 3,
-          inRange: true,
-          unused: false,
-          hasScript: true,
-          rawEntry: 's3.py',
-          sourceClassNames: ['', '1', 's3.py'],
-          scriptRel: 's3.py',
-          scriptAbs: '/data/workspace/myshixun/s3.py',
-        };
-      }
-      return {
-        position: pos,
-        inRange: false,
-        unused: false,
-        hasScript: false,
-        rawEntry: '',
-        sourceClassNames: ['', '1', 's3.py'],
-        scriptRel: '',
-        scriptAbs: '',
-      };
-    },
-    async exec(cmd) {
-      calls.push(`exec:${cmd}`);
+    async exec(cmd, opts) {
+      calls.push({ cmd, timeoutMs: opts?.timeoutMs });
       return { stdout: '', stderr: '', exitCode: 0 };
     },
+    async destroy() {
+      const hadPod = isOpen;
+      isOpen = false;
+      pod = null;
+      calls.push(`destroy:${hadPod}`);
+      if (hadPod) destroyCount += 1;
+      return hadPod;
+    },
+    close() { isOpen = false; pod = null; calls.push('close'); },
   };
+  let allCasesResult = [];
   let gradeOutcome = true;
-  let gradeCalls = 0;
-  let failedDetailCalls = 0;
-  const mockEvaluator = {
-    async grade(_detail, _key, _model, _evalCtx) {
-      gradeCalls += 1;
-      calls.push('evaluator.grade');
-      return gradeOutcome;
+  let gradeTimeoutArg = null;
+  let postGradeSets = null;
+  const mockDeps = {
+    prefs,
+    answerSource: {
+      async allCases() { calls.push('answerSource.allCases'); return allCasesResult; },
     },
-    async failedDetail() {
-      failedDetailCalls += 1;
-      return { count: 2 };
+    evaluator: {
+      async grade(_d, _k, _m, evalCtx, opts) {
+        calls.push('evaluator.grade');
+        gradeTimeoutArg = opts?.timeout;
+        assert.equal(opts?.requireChange, true, 'Linux container evaluation must require fingerprint change');
+        if (postGradeSets) {
+          evalCtx.lastDetail = { test_sets: postGradeSets };
+        }
+        return gradeOutcome;
+      },
     },
   };
 
-  const cfgState = {};
-  const { ctx: lCtx1Placeholder, logs: lLogsPlaceholder } = makeCtx({
-    model: makeModel({ title: '第1关', position: 1, shixunId: 'ms1', gameDbId: 98, linuxEnv: true }),
+  // 2a. Missing test sets: run one probe evaluation to backfill; skip if still empty after backfill
+  const sharedState = {};
+  const { ctx: noSetCtx, logs: noSetLogs } = makeCtx({
+    detail: { challenge: { id: 1 }, test_sets: [] },
+    model: makeModel({ title: '无测试集关卡', shixunId: 'ms0', gameDbId: 9, linuxEnv: true }),
   });
-  await linuxEnvStrategy.setup(lCtx1Placeholder, { session: { ssh: mockSsh }, state: cfgState, deps: { prefs } });
-  assert.equal(cfgState.hookDir, '/tmp/eval_hook/');
-  assert.equal(cfgState.scriptPath, '/tmp/eval_hook/anyhook.py');
-  assert.equal(cfgState.pyHookPath, '/tmp/eval_hook/pyhook.sh');
-  assert.deepEqual(cfgState.tempPaths, ['/tmp/eval_hook/', '/usr/local/bin/python', '/usr/local/bin/python3']);
-  assert.equal(lLogsPlaceholder.length, 2, 'setup logs should stay concise with only key milestones');
-  assert.ok(lLogsPlaceholder.some(([m, l]) => m.includes('部署 2 个脚本') && l === MSG_LEVEL.INFO));
-
-  const lResEmpty = await linuxEnvStrategy.solve(lCtx1Placeholder, {
-    session: { ssh: mockSsh },
-    state: cfgState,
-    deps: { evaluator: mockEvaluator },
-  });
-  assert.equal(lResEmpty.status, 'skipped');
-  assert.match(lResEmpty.reason, /未使用评测脚本/);
-  assert.equal(gradeCalls, 0);
-  assert.ok(lLogsPlaceholder.some(([m, l]) => m.includes('第 1 关无评测脚本（空），跳过') && l === MSG_LEVEL.INFO));
-
-  const { ctx: lCtx2Placeholder, logs: lLogsPlaceholderOne } = makeCtx({
-    model: makeModel({ title: '第2关', position: 2, shixunId: 'ms1', gameDbId: 99, linuxEnv: true }),
-  });
-  const lResOne = await linuxEnvStrategy.solve(lCtx2Placeholder, {
-    session: { ssh: mockSsh },
-    state: cfgState,
-    deps: { evaluator: mockEvaluator },
-  });
-  assert.equal(lResOne.status, 'skipped');
-  assert.match(lResOne.reason, /未使用评测脚本/);
-  assert.equal(gradeCalls, 0);
-  assert.ok(lLogsPlaceholderOne.some(([m, l]) => m.includes('第 2 关无评测脚本（1），跳过') && l === MSG_LEVEL.INFO));
-
-  // Valid stage passes when evaluator.grade returns true
-  const { ctx: lCtx3, logs: lLogs3 } = makeCtx({
-    model: makeModel({ title: '第3关', position: 3, shixunId: 'ms1', gameDbId: 100, linuxEnv: true }),
-  });
-  const lRes3Pass = await linuxEnvStrategy.solve(lCtx3, {
-    session: { ssh: mockSsh },
-    state: cfgState,
-    deps: { evaluator: mockEvaluator },
-  });
-  assert.deepEqual(lRes3Pass, { status: 'passed', title: '第3关' });
-  assert.equal(gradeCalls, 1);
-  assert.ok(lLogs3.some(([m, l]) => m.includes('第 3 关提交评测（s3.py）') && l === MSG_LEVEL.INFO));
-
-  // Valid stage fails cleanly with failedDetail count when evaluator.grade returns false
+  await linuxEnvStrategy.setup(noSetCtx, { state: sharedState, deps: mockDeps });
   gradeOutcome = false;
-  const { ctx: lCtx3Fail } = makeCtx({
-    model: makeModel({ title: '第3关失败', position: 3, shixunId: 'ms1', gameDbId: 100, linuxEnv: true }),
-  });
-  const lRes3Fail = await linuxEnvStrategy.solve(lCtx3Fail, {
-    session: { ssh: mockSsh },
-    state: cfgState,
-    deps: { evaluator: mockEvaluator },
-  });
-  assert.equal(lRes3Fail.status, 'failed');
-  assert.match(lRes3Fail.reason, /2 组用例未过/);
-  assert.equal(failedDetailCalls, 1);
+  postGradeSets = null;
+  const noSetRes = await linuxEnvStrategy.solve(noSetCtx, { session: { ssh: mockSsh }, state: sharedState, deps: mockDeps });
+  assert.equal(noSetRes.status, 'skipped');
+  assert.match(noSetRes.reason, /未下发测试集/);
+  assert.ok(noSetLogs.some(([m]) => m.includes('先空跑评测回填')));
+  assert.ok(noSetLogs.some(([m, l]) => m.includes('空跑后仍没有测试集') && l === MSG_LEVEL.WARN));
+  assert.equal(calls.filter(c => c === 'evaluator.grade').length, 1, 'must run only one probe evaluation');
+  assert.equal(calls.filter(c => c === 'open').length, 1, 'probe evaluation requires an open container');
+  assert.equal(destroyCount, 0, 'must retain container for subsequent stages in the job');
 
-  // Unmatched stage out of array range still returns failed without invoking grade
-  const prevGradeCalls = gradeCalls;
-  const { ctx: lCtxMiss, logs: lLogsMiss } = makeCtx({
-    model: makeModel({ title: '第9关', position: 9, shixunId: 'ms1', gameDbId: 101, linuxEnv: true }),
-  });
-  const lResMiss = await linuxEnvStrategy.solve(lCtxMiss, {
-    session: { ssh: mockSsh },
-    state: cfgState,
-    deps: { evaluator: mockEvaluator },
-  });
-  assert.equal(lResMiss.status, 'failed');
-  assert.equal(gradeCalls, prevGradeCalls);
-  assert.ok(lLogsMiss.some(([m, l]) => m.includes('第 9 关未匹配评测脚本') && l === MSG_LEVEL.WARN));
-
-  // Teardown cleans tracked tempPaths (including /tmp/eval_hook/ and symlinks)
-  cfgState.tempPaths.push(`/tmp/a'b.txt`);
-  await linuxEnvStrategy.teardown({ session: { ssh: mockSsh }, state: cfgState });
-  assert.deepEqual(calls, [
-    'open',
-    'probe',
-    'loadEvaluate',
-    'writeFile:/tmp/eval_hook/anyhook.py:755',
-    'writeFile:/tmp/eval_hook/pyhook.sh:755',
-    `exec:ln -sf -- '/tmp/eval_hook/pyhook.sh' '/usr/local/bin/python' && ln -sf -- '/tmp/eval_hook/pyhook.sh' '/usr/local/bin/python3'`,
-    'stageTarget:1',
-    'stageTarget:2',
-    'stageTarget:3',
-    'evaluator.grade',
-    'stageTarget:3',
-    'evaluator.grade',
-    'stageTarget:9',
-    `exec:rm -rf -- '/tmp/eval_hook/' '/usr/local/bin/python' '/usr/local/bin/python3' '/tmp/a'\\''b.txt'`,
-  ]);
-
-  // Symlink failure throws clearly
-  const { ctx: linkErrCtx } = makeCtx({ model: makeModel({ title: '软链失败', linuxEnv: true }) });
-  await assert.rejects(
-    linuxEnvStrategy.setup(linkErrCtx, {
-      session: {
-        ssh: {
-          async open() { return { host: '1.2.3.4', port: 22 }; },
-          async probe() { return { ok: true, detail: 'hello', durationMs: 5 }; },
-          async loadEvaluate() { return { workdir: '/data/workspace/myshixun', sourceClassNames: ['s1.py'] }; },
-          async writeFile() { return { bytes: 1, chunks: 1 }; },
-          async exec() { return { stdout: '', stderr: 'Permission denied', exitCode: 1 }; },
-        },
+  // 2a-extra. Backfill paths: evalCtx.lastDetail backfill without redundant detail(), passing probe, 401/abort passthrough, checkTestSets with input:null, empty-string filtering
+  mockSsh.close();
+  calls.length = 0; writes.clear(); destroyCount = 0;
+  let backfillApiDetailCalls = 0;
+  let backfillGradeCount = 0;
+  const backfillState = {};
+  const backfillDeps = {
+    prefs,
+    api: {
+      async detail() { backfillApiDetailCalls += 1; return { test_sets: [{ output: 'from-refresh' }] }; },
+      async checkTestSets() { return { test_sets: [{ input: null, output: '' }] }; },
+    },
+    evaluator: {
+      async grade(_d, _k, _m, evalCtx) {
+        backfillGradeCount += 1;
+        if (backfillGradeCount === 1) {
+          evalCtx.lastDetail = { test_sets: [{ output: '' }, { output: 'backfilled-answer' }] };
+          return false;
+        }
+        return true;
       },
-      state: {},
-      deps: { prefs },
-    }),
-    /绑定绕过脚本失败.*Permission denied/,
+    },
+  };
+  const { ctx: backfillCtx, logs: backfillLogs } = makeCtx({
+    detail: { challenge: { id: 19 }, test_sets: [{ output: '' }] },
+    model: makeModel({ title: '空跑回填关', shixunId: 'ms-bf', gameDbId: 19, linuxEnv: true }),
+  });
+  await linuxEnvStrategy.setup(backfillCtx, { state: backfillState, deps: backfillDeps });
+  const backfillRes = await linuxEnvStrategy.solve(backfillCtx, { session: { ssh: mockSsh }, state: backfillState, deps: backfillDeps });
+  assert.deepEqual(backfillRes, { status: 'passed', title: '空跑回填关' });
+  assert.equal(backfillGradeCount, 2);
+  assert.equal(backfillApiDetailCalls, 0, 'must reuse evalCtx.lastDetail without calling api.detail again');
+  assert.equal(writes.get('/data/workspace/.evalpass/answer.txt'), 'backfilled-answer');
+  assert.equal(
+    backfillLogs.some(([m]) => m.includes('复用容器')),
+    false,
+    'must log ensureContainer once rather than logging container reuse mid-stage',
   );
 
-  // Probe failure in setup throws and logs ERROR
-  const { ctx: badCtx, logs: badLogs } = makeCtx({ model: makeModel({ title: '坏容器', linuxEnv: true }) });
-  await assert.rejects(
-    linuxEnvStrategy.setup(badCtx, {
-      session: {
-        ssh: {
-          async open() { return { host: '1.2.3.4', port: 22 }; },
-          async probe() { return { ok: false, detail: 'connection refused', durationMs: 5 }; },
+  // If the probe evaluation itself passes, return passed immediately without a second evaluation
+  let probePassGradeCount = 0;
+  const probePassRes = await linuxEnvStrategy.solve(
+    makeCtx({
+      detail: { challenge: { id: 20 }, test_sets: [] },
+      model: makeModel({ title: '空跑直过', shixunId: 'ms-bf', gameDbId: 20, linuxEnv: true }),
+    }).ctx,
+    {
+      session: { ssh: mockSsh },
+      state: backfillState,
+      deps: {
+        prefs,
+        evaluator: {
+          async grade() { probePassGradeCount += 1; return true; },
         },
       },
-      state: {},
-      deps: { prefs },
-    }),
+    },
+  );
+  assert.deepEqual(probePassRes, { status: 'passed', title: '空跑直过' });
+  assert.equal(probePassGradeCount, 1);
+
+  // refreshDetail must propagate 401 auth errors instead of swallowing them
+  await assert.rejects(
+    linuxEnvStrategy.solve(
+      makeCtx({
+        detail: { challenge: { id: 21 }, test_sets: [] },
+        model: makeModel({ title: '鉴权失效', shixunId: 'ms-bf', gameDbId: 21, linuxEnv: true }),
+      }).ctx,
+      {
+        session: { ssh: mockSsh },
+        state: backfillState,
+        deps: {
+          prefs,
+          api: {
+            async detail() {
+              const err = new Error('登录状态已过期');
+              err.code = 401;
+              throw err;
+            },
+          },
+          evaluator: { async grade() { return false; } },
+        },
+      },
+    ),
+    err => err.code === 401,
+  );
+
+  // api.checkTestSets with input:null and valid output avoids dry evaluation altogether
+  let hiddenNullInputGradeCount = 0;
+  writes.clear();
+  const hiddenNullRes = await linuxEnvStrategy.solve(
+    makeCtx({
+      detail: { challenge: { id: 22 }, test_sets: [] },
+      model: makeModel({ title: '无输入隐藏集', shixunId: 'ms-bf', gameDbId: 22, linuxEnv: true }),
+    }).ctx,
+    {
+      session: { ssh: mockSsh },
+      state: backfillState,
+      deps: {
+        prefs,
+        api: {
+          async checkTestSets() { return { test_sets: [{ input: null, output: 'hidden-null-input-output' }] }; },
+        },
+        evaluator: {
+          async grade() { hiddenNullInputGradeCount += 1; return true; },
+        },
+      },
+    },
+  );
+  assert.deepEqual(hiddenNullRes, { status: 'passed', title: '无输入隐藏集' });
+  assert.equal(hiddenNullInputGradeCount, 1);
+  assert.equal(writes.get('/data/workspace/.evalpass/answer.txt'), 'hidden-null-input-output');
+
+  // 2b. Stage 1 (hidden sets): initial open -> upload hook & symlink -> stage answer -> grade -> clean answer dir
+  mockSsh.close(); // Reset mock container to simulate a fresh homework session
+  calls.length = 0; writes.clear(); destroyCount = 0; gradeOutcome = true; postGradeSets = null;
+  const stageState = {};
+  const { ctx: hiddenCtx, logs: hiddenLogs } = makeCtx({
+    detail: { challenge: { id: 10 }, test_sets: [] },
+    model: makeModel({ title: '第1关（隐藏集）', position: 1, shixunId: 'ms1', gameDbId: 10, linuxEnv: true }),
+  });
+  hiddenCtx.model.env = { tab_type: 3, shixun_environment_id: 55 };
+  allCasesResult = [{ input: 'in', output: '顾客实体\n网上商城系统' }];
+  const hiddenRes = await linuxEnvStrategy.solve(hiddenCtx, { session: { ssh: mockSsh }, state: stageState, deps: mockDeps });
+  assert.deepEqual(hiddenRes, { status: 'passed', title: '第1关（隐藏集）' });
+  assert.equal(writes.get('/data/workspace/.evalpass/answer.txt'), '顾客实体\n网上商城系统');
+  assert.equal(gradeTimeoutArg, TIMING.linuxGradeTimeout);
+  assert.equal(calls.filter(c => c === 'open').length, 1);
+  assert.equal(calls.filter(c => c === 'probe').length, 1);
+  assert.equal(calls.filter(c => c === 'writeFile:/tmp/eval_hook/answerhook.sh:755').length, 1);
+  assert.equal(
+    calls.filter(c => typeof c === 'object' && c.cmd.includes('ln -sf --')).length,
+    1,
+    'must bind python symlinks on initial setup',
+  );
+  assert.equal(
+    calls.some(c => typeof c === 'object' && c.cmd.includes('mkdir -p')),
+    false,
+    'writeFile already handles mkdir -p without a separate SSH call',
+  );
+  assert.ok(
+    calls.some(c => typeof c === 'object' && c.cmd === `rm -rf -- '/data/workspace/.evalpass'` && c.timeoutMs === 5000),
+    'must clean up staged answer directory with bounded timeout',
+  );
+  assert.equal(destroyCount, 0, 'must NOT destroy container between stages of the same job');
+  assert.ok(hiddenLogs.some(([m]) => m.includes('申请容器')));
+
+  // 2c. Stage 2 (direct test_sets + failure): reuses container without re-open/re-probe/re-hook, reads evalCtx.lastDetail
+  calls.length = 0; writes.clear();
+  gradeOutcome = false;
+  postGradeSets = [{ result: false }, { result: true }, { result: false }];
+  const { ctx: failCtx, logs: failLogs } = makeCtx({
+    detail: { challenge: { id: 11 }, test_sets: [{ output: '第二关输出', result: null }] },
+    model: makeModel({ title: '第2关（失败）', position: 2, shixunId: 'ms1', gameDbId: 11, linuxEnv: true }),
+  });
+  failCtx.model.env = { tab_type: 3, shixun_environment_id: 55 };
+  const failRes = await linuxEnvStrategy.solve(failCtx, { session: { ssh: mockSsh }, state: stageState, deps: mockDeps });
+  assert.equal(failRes.status, 'failed');
+  assert.match(failRes.reason, /2 组用例未过/);
+  assert.equal(writes.get('/data/workspace/.evalpass/answer.txt'), '第二关输出');
+  assert.equal(calls.filter(c => c === 'open').length, 0, 'stage 2 must reuse open container');
+  assert.equal(calls.filter(c => c === 'probe').length, 0, 'stage 2 must not re-probe container');
+  assert.equal(
+    calls.filter(c => typeof c === 'string' && c.startsWith('writeFile:/tmp/eval_hook/')).length,
+    0,
+    'stage 2 must not re-upload answerhook.sh',
+  );
+  assert.equal(
+    calls.filter(c => typeof c === 'object' && c.cmd.includes('ln -sf --')).length,
+    0,
+    'stage 2 must not re-link python symlinks',
+  );
+  assert.ok(
+    calls.some(c => typeof c === 'object' && c.cmd === `rm -rf -- '/data/workspace/.evalpass'` && c.timeoutMs === 5000),
+  );
+  assert.equal(destroyCount, 0, 'must still keep container until teardown at job end');
+  assert.ok(failLogs.some(([m]) => m.includes('复用容器（1.2.3.4:2222）')));
+
+  // 2d. Job teardown releases the shared container exactly once
+  await linuxEnvStrategy.teardown({ session: { ssh: mockSsh }, state: stageState, log: () => {} });
+  assert.equal(destroyCount, 1);
+  assert.equal(stageState.containerReady, false);
+
+  // 2e. open() failure leaves container unopened; teardown does not trigger remote delete
+  calls.length = 0; destroyCount = 0; postGradeSets = null; openShouldThrow = true;
+  const openFailState = {};
+  const { ctx: openFailCtx } = makeCtx({
+    detail: { challenge: { id: 12 }, test_sets: [{ output: 'x' }] },
+    model: makeModel({ title: '开容器失败', shixunId: 'ms-fail', gameDbId: 12, linuxEnv: true }),
+  });
+  await linuxEnvStrategy.setup(openFailCtx, { state: openFailState, deps: mockDeps });
+  await assert.rejects(
+    linuxEnvStrategy.solve(openFailCtx, { session: { ssh: mockSsh }, state: openFailState, deps: mockDeps }),
+    /容器启动失败/,
+  );
+  await linuxEnvStrategy.teardown({ session: { ssh: mockSsh }, state: openFailState, log: () => {} });
+  assert.equal(destroyCount, 0);
+  openShouldThrow = false;
+
+  // 3. Hook symlink failure happens during ensureContainer before answer write: skips rm -rf, teardown destroys container
+  let linkDestroyCalls = 0;
+  const linkExecCalls = [];
+  const linkErrState = {};
+  const linkErrSsh = {
+    isOpen: () => true,
+    async open() { return { host: '1.2.3.4', port: 22 }; },
+    async probe() { return { ok: true, detail: 'hello', durationMs: 5 }; },
+    async writeFile() { return { bytes: 1, chunks: 1 }; },
+    async exec(cmd, opts) {
+      linkExecCalls.push({ cmd, timeoutMs: opts?.timeoutMs });
+      return { stdout: '', stderr: 'Permission denied', exitCode: 1 };
+    },
+    async destroy() { linkDestroyCalls += 1; return true; },
+  };
+  const { ctx: linkErrCtx } = makeCtx({
+    detail: { challenge: { id: 1 }, test_sets: [{ output: '旅客' }] },
+    model: makeModel({ title: '软链失败', shixunId: 'ms3', gameDbId: 12, linuxEnv: true }),
+  });
+  linkErrCtx.model.env = { tab_type: 3, shixun_environment_id: 77 };
+  await linuxEnvStrategy.setup(linkErrCtx, { state: linkErrState, deps: mockDeps });
+  await assert.rejects(
+    linuxEnvStrategy.solve(linkErrCtx, { session: { ssh: linkErrSsh }, state: linkErrState, deps: mockDeps }),
+    /绑定答案脚本失败.*Permission denied/,
+  );
+  assert.equal(linkExecCalls.length, 1, 'must not run rm -rf when answer was not written yet');
+  assert.equal(linkDestroyCalls, 0, 'solve must not destroy container before teardown');
+  await linuxEnvStrategy.teardown({ session: { ssh: linkErrSsh }, state: linkErrState, log: () => {} });
+  assert.equal(linkDestroyCalls, 1, 'teardown must destroy opened container even if linkHook failed');
+
+  // 4. Probe failure throws, logs ERROR, skips rm -rf, and teardown destroys opened container
+  let badExecCalls = 0;
+  let badDestroyCalls = 0;
+  const badState = {};
+  const badSsh = {
+    isOpen: () => true,
+    async open() { return { host: '1.2.3.4', port: 22 }; },
+    async probe() { return { ok: false, detail: 'connection refused', durationMs: 5 }; },
+    async exec() { badExecCalls += 1; return { stdout: '', stderr: '', exitCode: 0 }; },
+    async destroy() { badDestroyCalls += 1; return true; },
+  };
+  const { ctx: badCtx, logs: badLogs } = makeCtx({
+    detail: { challenge: { id: 2 }, test_sets: [{ output: 'x' }] },
+    model: makeModel({ title: '坏容器', shixunId: 'ms4', gameDbId: 13, linuxEnv: true }),
+  });
+  await linuxEnvStrategy.setup(badCtx, { state: badState, deps: mockDeps });
+  await assert.rejects(
+    linuxEnvStrategy.solve(badCtx, { session: { ssh: badSsh }, state: badState, deps: mockDeps }),
     /SSH hello 测试未通过/,
   );
   assert.ok(badLogs.some(([m, l]) => m.includes('SSH 连通测试失败') && l === MSG_LEVEL.ERROR));
+  assert.equal(badExecCalls, 0, 'must not run rm -rf when answer was never written');
+  assert.equal(badDestroyCalls, 0);
+  await linuxEnvStrategy.teardown({ session: { ssh: badSsh }, state: badState, log: () => {} });
+  assert.equal(badDestroyCalls, 1, 'teardown must destroy container when probe fails after open');
 });
 
 test('choiceStrategy and codeStrategy execute cleanly through strategy interface', async () => {
@@ -497,9 +610,9 @@ test('createJobSession closes ssh if setup fails and createSolver supports hybri
   });
 
   try {
-    // 1. Setup failure does NOT mark strategy activated (teardown skipped) while dispose STILL closes SSH
+    // 1. Setup failure does NOT mark strategy activated (teardown skipped) while dispose STILL destroys SSH
     let teardownCalled = false;
-    let sshClosed = false;
+    let sshDestroyed = false;
     const failSession = createJobSession({ id: 1 }, {
       deps: {
         api: {
@@ -510,7 +623,7 @@ test('createJobSession closes ssh if setup fails and createSolver supports hybri
         model: Model,
       },
       classify: () => ({ kind: CHALLENGE_TYPE.LINUX_ENV, steps: [CHALLENGE_TYPE.LINUX_ENV] }),
-      createSsh: () => ({ close() { sshClosed = true; } }),
+      createSsh: () => ({ async destroy() { sshDestroyed = true; } }),
       strategies: {
         [CHALLENGE_TYPE.LINUX_ENV]: {
           name: CHALLENGE_TYPE.LINUX_ENV,
@@ -523,7 +636,7 @@ test('createJobSession closes ssh if setup fails and createSolver supports hybri
     await assert.rejects(failSession.solveStage({ gameId: 'g1', homeworkId: 1 }), /setup boom/);
     await failSession.dispose();
     assert.equal(teardownCalled, false);
-    assert.equal(sshClosed, true);
+    assert.equal(sshDestroyed, true);
 
     // 2. Hybrid choice -> code via solver.solve() executes both strategies and disposes automatically
     const order = [];
@@ -566,5 +679,162 @@ test('createJobSession closes ssh if setup fails and createSolver supports hybri
   } finally {
     if (prevLoc) Object.defineProperty(globalThis, 'location', prevLoc);
     else delete globalThis.location;
+  }
+});
+
+test('JobSession opens container once for multi-stage Linux homework and destroys once on dispose', async () => {
+  const prevLoc = Object.getOwnPropertyDescriptor(globalThis, 'location');
+  Object.defineProperty(globalThis, 'location', {
+    value: { origin: 'https://www.educoder.net' },
+    configurable: true,
+    writable: true,
+  });
+
+  try {
+    const prefs = createPrefs();
+    prefs.data = { ...prefs.defaults, sshBase: 'https://ssh.example.workers.dev', sshKey: '0123456789abcdef' };
+    let startEnvCalls = 0;
+    let deletePodCalls = 0;
+    let gradeCalls = 0;
+    const solver = createSolver({
+      api: {
+        async detail(gameId) {
+          return {
+            challenge: { id: gameId === 'g1' ? 1 : 2, subject: `关卡-${gameId}`, position: gameId === 'g1' ? 1 : 2, task_pass: '' },
+            myshixun: { identifier: 'ms-shared' },
+            game: { id: gameId === 'g1' ? 101 : 102, status: 0 },
+            shixun_environments: [{ tab_type: 3, shixun_environment_id: 99 }],
+            mirror_name: 'StarUML',
+            test_sets: [{ output: `expected-${gameId}`, result: null }],
+          };
+        },
+        async startEnv() {
+          startEnvCalls += 1;
+          return { status: 0, data: { ssh_address: '47.99.211.146', port: 50174, username: 'root', password: 'pw' } };
+        },
+        async exitDeletePod() {
+          deletePodCalls += 1;
+          return { status: 0 };
+        },
+      },
+      sshClient: {
+        async exec(_pod, command) {
+          if (command === 'echo hello') return { stdout: 'hello\n', stderr: '', exitCode: 0 };
+          return { stdout: '', stderr: '', exitCode: 0 };
+        },
+      },
+      evaluator: {
+        async grade(_d, _k, _m, evalCtx) {
+          gradeCalls += 1;
+          if (gradeCalls === 2) evalCtx.lastDetail = { test_sets: [{ result: false }] };
+          return gradeCalls === 1;
+        },
+      },
+      model: Model,
+      prefs,
+    });
+
+    const jobSession = solver.openJob({ id: 4074857 });
+    const res1 = await jobSession.solveStage({ gameId: 'g1', homeworkId: 4074857 });
+    assert.deepEqual(res1, { status: 'passed', title: '关卡-g1' });
+    assert.equal(startEnvCalls, 1);
+    assert.equal(deletePodCalls, 0);
+
+    const res2 = await jobSession.solveStage({ gameId: 'g2', homeworkId: 4074857 });
+    assert.equal(res2.status, 'failed');
+    assert.match(res2.reason, /1 组用例未过/);
+    assert.equal(startEnvCalls, 1, 'stage 2 must reuse the same container instance');
+    assert.equal(deletePodCalls, 0, 'must not destroy container until jobSession.dispose()');
+
+    await jobSession.dispose();
+    assert.equal(deletePodCalls, 1, 'jobSession.dispose() must destroy the container once after all stages settle');
+  } finally {
+    if (prevLoc) Object.defineProperty(globalThis, 'location', prevLoc);
+    else delete globalThis.location;
+  }
+});
+
+test('pickOutput 只在平台评过之后才把空串当作有效期望值', async () => {
+  const { linuxEnvStrategy } = await import('../src/solver/strategies/linux-env.js');
+  const prefs = createPrefs();
+  prefs.data = { ...prefs.defaults, sshBase: 'https://ssh.example.dev', sshKey: '0123456789abcdef' };
+
+  const makeHarness = () => {
+    const writes = new Map();
+    const calls = [];
+    let open = false;
+    let pod = null;
+    const ssh = {
+      isOpen: () => open,
+      async open() { open = true; pod = { host: 'h', port: 22 }; calls.push('open'); return pod; },
+      currentPod: () => pod,
+      async probe() { return { ok: true, detail: 'hello', durationMs: 3 }; },
+      async writeFile(path, content) { writes.set(path, content); calls.push(`write:${path}`); },
+      async exec() { return { stdout: '', stderr: '', exitCode: 0 }; },
+      async destroy() { open = false; pod = null; calls.push('destroy'); return true; },
+      close() { open = false; pod = null; },
+    };
+    const deps = {
+      prefs,
+      evaluator: {
+        async grade() { calls.push('grade'); return false; },
+        async failedDetail() { return { count: 0 }; },
+      },
+      api: {
+        async detail() {
+          calls.push('detail');
+          // 空跑后平台回填：output 仍是空串，但 result/compile_success 有值
+          return { game: { status: 0 }, test_sets: [{ output: '', result: false, actual_output: '', compile_success: 1 }] };
+        },
+      },
+    };
+    return { ssh, deps, writes, calls };
+  };
+
+  // 情形 A：期望值是空串且「未评过」→ 先空跑，回填后按空串作答
+  {
+    const h = makeHarness();
+    const state = {};
+    const { ctx, logs } = makeCtx({
+      detail: { challenge: { id: 1 }, test_sets: [{ output: '', result: null, actual_output: null, compile_success: null }] },
+      model: makeModel({ title: '请画出数据库信息处理流程', shixunId: 'ms', gameDbId: 1, linuxEnv: true }),
+    });
+    ctx.model.env = { tab_type: 3, shixun_environment_id: 11 };
+    await linuxEnvStrategy.setup(ctx, { state, deps: h.deps });
+    const res = await linuxEnvStrategy.solve(ctx, { session: { ssh: h.ssh }, state, deps: h.deps });
+    assert.ok(logs.some(([m]) => m.includes('先空跑评测回填')), '未评过的空串要先空跑');
+    assert.equal(h.writes.get('/data/workspace/.evalpass/answer.txt'), '', '回填后按空串作答');
+    assert.equal(res.status, 'failed', '评测没通过就如实返回 failed');
+  }
+
+  // 情形 B：期望值是空串且「已评过」→ 不空跑，直接按空串作答
+  {
+    const h = makeHarness();
+    const state = {};
+    const { ctx, logs } = makeCtx({
+      detail: { challenge: { id: 2 }, test_sets: [{ output: '', result: true, actual_output: '', compile_success: 1 }] },
+      model: makeModel({ title: '请画出文件信息处理流程', shixunId: 'ms', gameDbId: 2, linuxEnv: true }),
+    });
+    ctx.model.env = { tab_type: 3, shixun_environment_id: 12 };
+    await linuxEnvStrategy.setup(ctx, { state, deps: h.deps });
+    await linuxEnvStrategy.solve(ctx, { session: { ssh: h.ssh }, state, deps: h.deps });
+    assert.ok(!logs.some(([m]) => m.includes('先空跑评测回填')), '已评过就不该再空跑');
+    assert.equal(h.writes.get('/data/workspace/.evalpass/answer.txt'), '');
+    assert.equal(h.calls.filter(c => c === 'grade').length, 1, '只评一次');
+  }
+
+  // 情形 C：期望值有内容 → 直接作答，不空跑
+  {
+    const h = makeHarness();
+    const state = {};
+    const { ctx } = makeCtx({
+      detail: { challenge: { id: 3 }, test_sets: [{ output: '1', result: null }] },
+      model: makeModel({ title: '形成初步需求列表', shixunId: 'ms', gameDbId: 3, linuxEnv: true }),
+    });
+    ctx.model.env = { tab_type: 3, shixun_environment_id: 13 };
+    await linuxEnvStrategy.setup(ctx, { state, deps: h.deps });
+    await linuxEnvStrategy.solve(ctx, { session: { ssh: h.ssh }, state, deps: h.deps });
+    assert.equal(h.writes.get('/data/workspace/.evalpass/answer.txt'), '1');
+    assert.equal(h.calls.filter(c => c === 'grade').length, 1);
   }
 });

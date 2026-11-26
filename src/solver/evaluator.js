@@ -75,7 +75,7 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
       key,
       model,
       evalCtx,
-      { commitId = '', timeout = TIMING.codeGradeTimeout, log = () => {}, signal = null } = {},
+      { commitId = '', timeout = TIMING.codeGradeTimeout, requireChange = false, log = () => {}, signal = null } = {},
     ) {
       const env = model.env || {};
       const tabType = env.tab_type ?? 1;
@@ -104,6 +104,7 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
         timeout,
         log,
         base: this.baseline(snapshot),
+        requireChange,
         signal,
       });
     },
@@ -112,9 +113,11 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
      * Polls task detail until the asynchronous evaluation settles:
      * 1. `game.status === 2` indicates the challenge passed.
      * 2. A changed result fingerprint indicates new evaluation results have landed and failed.
-     * 3. An unchanged fingerprint after `TIMING.minEvalMs` indicates the new run produced identical failure outputs.
+     * 3. When `requireChange` is false, an unchanged fingerprint after `TIMING.minEvalMs`
+     *    indicates the new run produced identical failure outputs. When `requireChange` is true
+     *    (used by Linux container evaluations), wait for a fingerprint change before declaring failure.
      */
-    async waitPassed(key, evalCtx, { timeout = TIMING.passTimeout, log = null, base = null, signal = null } = {}) {
+    async waitPassed(key, evalCtx, { timeout = TIMING.passTimeout, log = null, base = null, requireChange = false, signal = null } = {}) {
       const startedAt = Date.now();
       const end = startedAt + timeout;
       let tick = 0;
@@ -135,8 +138,10 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
           if (!settled) continue;
 
           if (!base) return false;
+          // Linux container evaluations must wait for a fingerprint change so stale outputs from a
+          // previous run are not mistaken for the result of the newly triggered evaluation.
           if (this.signature(detail) !== base.sig) return false;
-          if (Date.now() - startedAt >= TIMING.minEvalMs) return false;
+          if (!requireChange && Date.now() - startedAt >= TIMING.minEvalMs) return false;
         } catch (error) {
           if (isAbortError(error) || signal?.aborted) throw abortError();
           if (error.code === 401) throw error;
@@ -146,7 +151,7 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
     },
 
     /** Extracts failed test case diffs, compiler output, and passing inputs from the latest detail snapshot. */
-    async failedDetail(key, evalCtx, signal = null) {
+    async failedDetail(key, evalCtx, signal = null, fallbackCases = null) {
       try {
         const detail = evalCtx.lastDetail || await api.detail(key.gameId, key.homeworkId, signal);
         const tests = Array.isArray(detail?.test_sets) ? detail.test_sets : [];
@@ -156,17 +161,21 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
           if (value === null || value === undefined) return null;
           return String(value).slice(0, max);
         };
+        const cases = Array.isArray(fallbackCases) ? fallbackCases : [];
+        const byPos = new Map(cases.filter(c => c?.position !== undefined).map(c => [c.position, c]));
         const ordered = [...failed].sort((a, b) => (b.actual_output ? 1 : 0) - (a.actual_output ? 1 : 0));
         const lines = ordered.slice(0, 5).map(item => {
           const position = item.position ?? '?';
-          const input = clip(item.input, 400);
-          const expected = clip(item.output, 800);
+          const rawIdx = tests.indexOf(item);
+          const fallback = (item.position !== undefined ? byPos.get(item.position) : null) || cases[rawIdx] || null;
+          const input = clip(item.input ?? fallback?.input, 400);
+          const expected = clip(item.output ?? fallback?.output, 800);
           const actual = clip(item.actual_output, 1200);
           return [
             `用例 ${position}:`,
-            `  输入: ${input ?? '(隐藏用例，平台未公开)'}`,
-            `  期望: ${expected ?? '(隐藏用例，平台未公开)'}`,
-            `  实际: ${actual ?? '(无任何输出)'}`,
+            `  输入: ${input !== null ? JSON.stringify(input) : '(隐藏用例，平台未公开)'}`,
+            `  期望: ${expected !== null ? JSON.stringify(expected) : '(隐藏用例，平台未公开)'}`,
+            `  实际: ${actual !== null ? JSON.stringify(actual) : '(无任何输出)'}`,
           ].join('\n');
         });
         return {
@@ -180,7 +189,7 @@ export function createEvaluator({ api = Api, answerSource = AnswerSource } = {})
         return { count: 0, sample: '', compile: '', passedInputs: [] };
       }
     },
-    
+
     /** Formats failed case diagnostics into anti-regression prompt feedback. */
     buildFailureFeedback(failed) {
       return [

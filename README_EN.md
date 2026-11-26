@@ -8,7 +8,7 @@
 
 [English](README_EN.md) | [简体中文](README.md)
 
-[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.2.0-blue.svg)]()
 [![ScriptCat](https://img.shields.io/badge/ScriptCat-Install-orange.svg)](https://scriptcat.org/zh-CN/script-show-page/9163)
 [![Platform](https://img.shields.io/badge/Platform-ScriptCat%20%7C%20Tampermonkey-green.svg)](https://docs.scriptcat.org/)
 [![Target](https://img.shields.io/badge/Target-Educoder-blue.svg)](https://www.educoder.net)
@@ -40,13 +40,16 @@ If you are frustrated with Educoder's sluggish page transitions and endless manu
   * **Reasoning Models & Concurrent Multimodal**: Native compatibility with thinking models. Strictly filters `image/*` attachments and downloads problem images concurrently for vision models while ignoring raw text data files.
   * **Unified Template Cache & Prompt Context Injection**: Caches original starter templates across tiers and retries; packages evaluation scripts (`evaluate.py`), hidden test cases, and comparison rules directly into the prompt.
   * **Snapshot Reuse & Anti-Regression Retries**: Uses evaluation result fingerprints to detect asynchronous grading completion and reuses the latest detail snapshot to eliminate redundant requests. Failed retries inject compiler logs, diffs, and an explicit list of "already passing inputs" to prevent regressions.
+* **Linux Container Automation**  
+  Works with the companion remote SSH gateway (`cf-ssh-exec`) to provision and connect to Linux lab containers (StarUML, VNC, Logisim, and other `tab_type === 3` container challenges), stage visible or hidden test expectations, and trigger platform grading:
+  * **Per-Homework Reuse & Automatic Pod Cleanup**: Reuses a single container instance across all stages of the same homework and automatically destroys it via `exit_delete_pod.json` once the homework finishes, fails, or aborts — preventing exhaustion of Educoder's 5-instance concurrency cap.
 * **Smart Pipeline Runner & Smooth UI**  
   * **Bidirectional Chain Scanning & Route Awareness**: Traverses challenges both backward (`prev_game`) and forward (`next_game`) while automatically refreshing idle state when navigating across SPA routes.
   * **Refined Material Design 3 Dock**: Features pulsing phase indicators, active homework highlighting, bounded scrollable lists with auto-following logs, and `requestAnimationFrame` batched rendering.
 
 > **Supported Challenge Types**:  
-> ✅ Supported: Multiple-choice questions (single & multiple), text fill-in-the-blanks (with `evaluate.py`), programming tasks (C/C++, Python, Java, etc.).  
-> ⏭️ Automatically Skipped: Graphical virtual desktop environments (StarUML, VNC, Logisim; optional remote SSH gateway parameters can be configured in General Settings).
+> ✅ Supported: Multiple-choice questions (single & multiple), text fill-in-the-blanks (with `evaluate.py`), programming tasks (C/C++, Python, Java, etc.), and Linux container labs (StarUML / VNC / Logisim; requires a remote SSH gateway in Settings, skipped automatically if unconfigured).  
+> ⏭️ Automatically Skipped: Unity 3D simulation challenges (scored inside the 3D scene and reported back via `postMessage`).
 
 ---
 
@@ -81,7 +84,7 @@ Open **Settings** at the top of the panel to customize execution parameters:
 ### General Settings (Settings ➔ General Settings)
 * **Startup Delay / Code Auto-Retries / Log History Rows**: Customize the countdown before queue execution, AI auto-retry count on failed evaluations (0–4), and visible log lines.
 * **Enable AI Coding Fallback (`aiFallback`)**: Recommended on. The script always prioritizes native evaluation scripts, reference answers, and full test suites; when enabled, it falls back to the AI code generator only when native answers are unavailable.
-* **Remote SSH Gateway URL & Key (Optional)**: Used only for graphical virtual desktop challenges; leave blank for normal choice, fill-in-the-blank, and coding challenges.
+* **Remote SSH Gateway URL & Key (Optional for Linux Container Labs)**: Used to connect to StarUML, VNC, Logisim, and other Linux lab containers for automated grading; leave blank for normal choice, fill-in-the-blank, and coding challenges (Linux container stages skip automatically when unconfigured).
 
 ### AI Model Settings (Settings ➔ AI Model)
 | Parameter | Recommended | Description |
@@ -96,7 +99,7 @@ Open **Settings** at the top of the panel to customize execution parameters:
 
 ## Companion Remote SSH Gateway (`cf-ssh-exec`)
 
-Because browser scripts cannot open raw TCP sockets directly, this repository includes [cf-ssh-exec](cf-ssh-exec/README_EN.md) for challenges that require connecting to public SSH lab instances. Set an `SSH_API_KEY` to deploy it on the Cloudflare Workers Free plan and execute SSH commands over HTTP.
+Because browser scripts cannot open raw TCP sockets directly, this repository includes [cf-ssh-exec](cf-ssh-exec/README_EN.md) to power the Linux container lab automation introduced in v1.2.0. Set an `SSH_API_KEY` to deploy it on the Cloudflare Workers Free plan so the script can securely connect to lab pods and run SSH commands over HTTP.
 
 See the **[cf-ssh-exec Documentation](cf-ssh-exec/README_EN.md)** for deployment and usage details.
 

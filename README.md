@@ -8,7 +8,7 @@
 
 [English](README_EN.md) | [简体中文](README.md)
 
-[![Version](https://img.shields.io/badge/Version-1.1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-1.2.0-blue.svg)]()
 [![ScriptCat](https://img.shields.io/badge/ScriptCat-一键安装-orange.svg)](https://scriptcat.org/zh-CN/script-show-page/9163)
 [![Platform](https://img.shields.io/badge/Platform-ScriptCat%20%7C%20Tampermonkey-green.svg)](https://docs.scriptcat.org/)
 [![Target](https://img.shields.io/badge/Target-Educoder-blue.svg)](https://www.educoder.net)
@@ -40,13 +40,16 @@
   * **深度推理与并发多模态**：原生支持思考链（Thinking Level）；严格甄别并并发下载 `image/*` 题干配图，自动过滤纯文本数据附件。
   * **判分情报与模板缓存**：统一缓存各关卡初始代码模板，避免跨级重试时重复拉取或污染原始模板；调用模型时自动注入判分脚本、隐藏用例与比对规则。
   * **评测快照复用与已通过用例保护**：利用评测结果指纹精准识别异步评测落地状态，复用最新详情快照消除冗余请求；重试时自动注入编译报错、差异对比及“已通过输入列表”，防止模型重构时破坏已有正确逻辑。
+* **Linux 实验环境题自动化（Linux Container Automation）**  
+  配合远程 SSH 网关（`cf-ssh-exec`）自动申请并连接 Linux 实验容器（支持 StarUML、VNC、Logisim 等 `tab_type === 3` 容器实训），自动读取平台可见及隐藏测试集部署回放脚本并触发评测：
+  * **按题目复用并自动释放实例**：同实训题目下的多关复用同一个容器实例，整题全部关卡结束后（无论通过、失败还是中止）自动调用 `exit_delete_pod.json` 销毁释放，避免触及头歌同时最多持有 5 个实例的上限。
 * **全自动队列调度与清爽交互（Pipeline Runner & Smooth UI）**  
   * **双向链表扫描与路由感知**：以入口关卡为基点前后双向（`prev_game` 回溯 + `next_game` 前进）并发收集未完成关卡；单页应用切换课程或作业时自动感知并刷新待机列表。
   * **高可读性卡片视图**：Material Design 3 风格悬浮面板，支持脉冲状态指示、当前作答作业高亮、独立滚动列表与日志自动触底跟随，借助 `requestAnimationFrame` 合并帧刷新杜绝界面抖动。
 
 > **支持范围说明**：  
-> ✅ 完美支持：选择题（单选/多选）、文本填空题（带 `evaluate.py`）、代码编程题（C/C++/Python/Java 等）。  
-> ⏭️ 自动跳过：StarUML、VNC、Logisim 等图形化虚拟桌面关卡（可在「常规设置」中选填远程 SSH 网关参数）。
+> ✅ 完美支持：选择题（单选/多选）、文本填空题（带 `evaluate.py`）、代码编程题（C/C++/Python/Java 等），以及 Linux 实验环境题（StarUML / VNC / Logisim 等容器实训，需在设置中填写远程 SSH 网关，未配置时自动跳过）。  
+> ⏭️ 自动跳过：Unity 3D 仿真题（判分在 3D 场景内完成后由应用回传平台）。
 
 ---
 
@@ -81,7 +84,7 @@
 ### 常规设置（设置 ➔ 常规设置）
 * **启动缓冲时间 / 代码题自动重试次数 / 日志保留条数**：控制启动前倒计时、AI 代码评测失败后的自动修正次数（0–4 次）及面板日志展示行数。
 * **启用 AI 编程兜底 (`aiFallback`)**：建议开启。脚本始终优先使用平台判分脚本、参考答案和全量用例通关；开启此项后，仅在无现成答案可用时才调用 AI 编写代码。
-* **远程 SSH 网关地址与密钥（选填）**：仅图形化虚拟桌面关卡使用，普通选择题、填空题与编程题留空即可。
+* **远程 SSH 网关地址与密钥（Linux 环境题选填）**：用于自动连入 StarUML、VNC、Logisim 等 Linux 实验容器执行评测；普通选择题、填空题与常规编程题无需配置，留空即可（未配置时自动跳过环境题）。
 
 ### AI 模型参数（设置 ➔ AI 模型）
 | 配置项 | 推荐值 | 说明 |
@@ -96,7 +99,7 @@
 
 ## 配套远程 SSH 网关（`cf-ssh-exec`）
 
-浏览器脚本受沙箱限制无法直接发原始 TCP 连接。针对需要连接公网 SSH 实验机的场景，仓库内置了 [cf-ssh-exec](cf-ssh-exec/README.md) 子项目，配置一个 `SSH_API_KEY` 即可一键部署到 Cloudflare Workers 免费版，供脚本通过 HTTP 接口远程执行 SSH 命令。
+浏览器脚本受沙箱限制无法直接发起原始 TCP 连接。针对 v1.2.0 新增的 Linux 实验环境题自动化评测与远程命令执行场景，仓库内置了 [cf-ssh-exec](cf-ssh-exec/README.md) 子项目，配置一个 `SSH_API_KEY` 即可一键部署到 Cloudflare Workers 免费版，供脚本通过 HTTP 接口安全连接并操作实验容器。
 
 详见：**[cf-ssh-exec 部署与使用说明](cf-ssh-exec/README.md)**
 

@@ -23,6 +23,7 @@ export function createJobSession(job, {
     job,
     ssh,
 
+    /** Lazily initializes and caches the strategy entry for a given challenge step type. */
     async ensureStrategy(step, stageCtx) {
       if (disposed) throw new Error('答题会话已释放，无法激活题型策略');
       if (activated.has(step)) return activated.get(step);
@@ -38,6 +39,7 @@ export function createJobSession(job, {
       return entry;
     },
 
+    /** Fetches challenge details, runs the classified strategy steps, and returns the stage outcome. */
     async solveStage(item, { log = () => {}, signal = null, onTitle = () => {}, onNotice = () => {} } = {}) {
       if (signal?.aborted) throw abortError();
       let detail;
@@ -94,6 +96,7 @@ export function createJobSession(job, {
       return { status: 'skipped', title: challengeModel.title, reason: '当前关卡没有可作答的题目' };
     },
 
+    /** Runs all activated strategy `teardown` hooks in reverse order and destroys any held SSH container. */
     async dispose({ log = () => {} } = {}) {
       if (disposed) return;
       disposed = true;
@@ -105,12 +108,16 @@ export function createJobSession(job, {
             try {
               await strategy.teardown({ session, state, deps, log });
             } catch {
-              // Best-effort cleanup: never block subsequent jobs or skip closing SSH
+              // Best-effort cleanup: never block subsequent jobs or skip destroying the SSH container.
             }
           }
         }
       } finally {
-        ssh.close();
+        if (typeof ssh?.destroy === 'function') {
+          await ssh.destroy({ log });
+        } else {
+          ssh?.close?.();
+        }
       }
     },
   };

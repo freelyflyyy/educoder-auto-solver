@@ -3,13 +3,33 @@ import { abortError, isAbortError, sleep } from '../core/utils.js';
 import { Api } from '../platform/api.js';
 import { SshClient } from './client.js';
 
-const EVALUATE_SCRIPT_PATH = '/data/protectspace/evaluate.sh';
 const WRITE_B64_CHUNK_SIZE = 4096;
+// Educoder start.json returns status -1 for transient pod-quota exhaustion or container recycling,
+// so keep -1 retryable and only fail fast on hard auth/permission/parameter/signature rejections.
+const NON_RETRYABLE_START_CODES = new Set([403, 404, -102]);
 
+/** Normalizes text or binary content into UTF-8 `Uint8Array` bytes. */
 function toUtf8Bytes(content) {
   return content instanceof Uint8Array
     ? content
     : new TextEncoder().encode(String(content ?? ''));
+}
+
+/** Extracts and validates the container lease descriptor required by `start.json` and `exit_delete_pod.json`. */
+function extractLease(model, key) {
+  const shixunId = model?.shixunId;
+  const envId = model?.env?.shixun_environment_id;
+  const gameDbId = model?.gameDbId;
+  if (!shixunId || !envId || !gameDbId) {
+    throw new Error('关卡缺少实训环境参数，无法初始化容器');
+  }
+  return {
+    shixunId,
+    envId,
+    gameDbId,
+    tabType: model.env?.tab_type ?? 3,
+    homeworkId: key?.homeworkId,
+  };
 }
 
 /** POSIX single-quote escaping for safe embedding into remote shell commands. */
@@ -27,163 +47,66 @@ export function encodeBase64(content) {
   return btoa(binary);
 }
 
-function parseBashArrayItems(text, startIndex) {
-  const items = [];
-  let i = startIndex;
-
-  while (i < text.length) {
-    while (i < text.length && /\s/.test(text[i])) i += 1;
-    if (i >= text.length) break;
-
-    if (text[i] === '#') {
-      while (i < text.length && text[i] !== '\n') i += 1;
-      continue;
-    }
-
-    if (text[i] === ')') break;
-
-    let value = '';
-    while (i < text.length) {
-      const ch = text[i];
-      if (/\s/.test(ch) || ch === ')') break;
-
-      if (ch === '"') {
-        i += 1;
-        while (i < text.length && text[i] !== '"') {
-          if (text[i] === '\\' && i + 1 < text.length) {
-            const next = text[i + 1];
-            if (next === '\n') {
-              i += 2;
-              continue;
-            }
-            if (next === '"' || next === '\\' || next === '$' || next === '`') {
-              value += next;
-              i += 2;
-              continue;
-            }
-          }
-          value += text[i];
-          i += 1;
-        }
-        if (i < text.length && text[i] === '"') i += 1;
-      } else if (ch === "'") {
-        i += 1;
-        while (i < text.length && text[i] !== "'") {
-          value += text[i];
-          i += 1;
-        }
-        if (i < text.length && text[i] === "'") i += 1;
-      } else if (ch === '\\' && i + 1 < text.length) {
-        if (text[i + 1] !== '\n') value += text[i + 1];
-        i += 2;
-      } else {
-        value += ch;
-        i += 1;
-      }
-    }
-
-    items.push(value);
-  }
-
-  return items;
-}
-
 /**
- * Checks whether an `evaluate.sh` stage slot (`sourceClassNames[$1 - 1]`) is a placeholder
- * (`""` or `"1"`) indicating the challenge does not use an evaluation script in mixed homeworks.
- */
-export function isPlaceholderEvaluateEntry(entry) {
-  const normalized = String(entry ?? '').trim();
-  return normalized === '' || normalized === '1';
-}
-
-/**
- * Parses `/data/protectspace/evaluate.sh` for working directory, execution command,
- * and the per-stage `sourceClassNames` list (preserving empty slots and parentheses inside quotes).
- */
-export function parseEvaluateScript(script) {
-  const text = String(script || '').replace(/\r\n/g, '\n');
-
-  const cdMatch = /^\s*cd\s+(?:"([^"]+)"|'([^']+)'|(\S+))/m.exec(text);
-  const workdir = cdMatch?.[1] || cdMatch?.[2] || cdMatch?.[3] || '/data/workspace/myshixun';
-
-  const cmdMatch = /^\s*executeCommand\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/m.exec(text);
-  const executeCommand = cmdMatch?.[1] ?? cmdMatch?.[2] ?? cmdMatch?.[3] ?? '';
-
-  const arrMatch = /^\s*sourceClassNames\s*=\s*\(/m.exec(text);
-  const sourceClassNames = arrMatch
-    ? parseBashArrayItems(text, arrMatch.index + arrMatch[0].length)
-    : [];
-
-  return { workdir, executeCommand, sourceClassNames };
-}
-
-/** Resolves the 1-based stage script paths (`scriptRel` / `scriptAbs`) and placeholder flags. */
-export function resolveStageTarget(config, position) {
-  const stage = Number(position) || 0;
-  const list = Array.isArray(config?.sourceClassNames) ? config.sourceClassNames : [];
-  const inRange = stage >= 1 && stage <= list.length;
-  const rawEntry = inRange ? String(list[stage - 1] ?? '').trim() : '';
-  const unused = inRange && isPlaceholderEvaluateEntry(rawEntry);
-  const scriptRel = inRange && !unused ? rawEntry : '';
-  const workdir = String(config?.workdir || '/data/workspace/myshixun').replace(/\/+$/, '');
-  const scriptAbs = scriptRel
-    ? (scriptRel.startsWith('/') ? scriptRel : `${workdir}/${scriptRel}`)
-    : '';
-  return {
-    ...config,
-    position: stage,
-    inRange,
-    unused,
-    hasScript: Boolean(scriptAbs),
-    rawEntry,
-    scriptRel,
-    scriptAbs,
-  };
-}
-
-/**
- * Job-scoped SSH container session owning a single pod and its parsed `evaluate.sh` metadata.
+ * Job-scoped SSH container session owning a single pod for one homework.
  * Disposed at the end of the enclosing `JobSession`, leaving zero cross-homework state.
  */
 export function createSshSession({ api = Api, sshClient = SshClient } = {}) {
   let pod = null;
-  let evaluate = null;
+  let lease = null;
+
+  /**
+   * Best-effort remote container teardown (`exit_delete_pod.json`).
+   * Intentionally omits `AbortSignal` so pausing or aborting still releases platform slots.
+   */
+  async function deleteRemotePod(targetLease, { log = () => {}, silent = false } = {}) {
+    if (!targetLease || typeof api?.exitDeletePod !== 'function') return false;
+    try {
+      await api.exitDeletePod(targetLease.shixunId, {
+        envId: targetLease.envId,
+        gameDbId: targetLease.gameDbId,
+        tabType: targetLease.tabType,
+        homeworkId: targetLease.homeworkId,
+      });
+      return true;
+    } catch (error) {
+      if (!silent) log(`　释放容器失败：${error.message}`, MSG_LEVEL.WARN);
+      return false;
+    }
+  }
 
   return {
+    /** Returns `true` when this session currently holds an open SSH pod. */
     isOpen() {
       return pod !== null;
     },
 
+    /** Returns the active pod connection descriptor, or `null` if closed. */
     currentPod() {
       return pod;
     },
 
-    evaluateConfig() {
-      return evaluate;
-    },
-
-    /** Starts the training container via `start.json` (idempotent within the current job session). */
+    /**
+     * Starts the training container via `start.json` with linear backoff retries on transient
+     * platform congestion or cold-start delays (idempotent within the current job session).
+     */
     async open(model, key, { log = () => {}, signal = null } = {}) {
       if (pod) return pod;
+      if (signal?.aborted) throw abortError();
 
-      const shixunId = model?.shixunId;
-      const envId = model?.env?.shixun_environment_id;
-      const gameDbId = model?.gameDbId;
-
-      if (!shixunId || !envId || !gameDbId) {
-        throw new Error('关卡缺少实训环境参数，无法初始化容器');
-      }
-
+      const nextLease = extractLease(model, key);
+      const total = TIMING.envStartAttempts;
       let lastReason = '';
-      for (let attempt = 1; attempt <= TIMING.envStartAttempts; attempt += 1) {
+      let sawStatusZeroWithoutSsh = false;
+
+      for (let attempt = 1; attempt <= total; attempt += 1) {
         if (signal?.aborted) throw abortError();
         try {
-          const resp = await api.startEnv(shixunId, {
-            envId,
-            gameDbId,
-            tabType: model.env?.tab_type ?? 3,
-            homeworkId: key.homeworkId,
+          const resp = await api.startEnv(nextLease.shixunId, {
+            envId: nextLease.envId,
+            gameDbId: nextLease.gameDbId,
+            tabType: nextLease.tabType,
+            homeworkId: nextLease.homeworkId,
           }, signal);
 
           const data = resp?.data || {};
@@ -195,24 +118,34 @@ export function createSshSession({ api = Api, sshClient = SshClient } = {}) {
               password: String(data.password),
               remainingTime: Number(data.remaining_time) || 0,
             };
+            lease = nextLease;
             return pod;
           }
-          lastReason = String(resp?.message || '容器已响应，但未获取到 SSH 地址（可能仅开放 VNC）');
+          if (resp?.status === 0) {
+            sawStatusZeroWithoutSsh = true;
+            lastReason = String(resp?.message || '容器已响应，但未获取到 SSH 地址（可能仅开放 VNC）');
+          } else {
+            lastReason = String(resp?.message || '平台未返回有效容器信息');
+          }
         } catch (error) {
           if (isAbortError(error) || signal?.aborted) throw abortError();
           if (error.code === 401) throw error;
-          lastReason = error.message;
-          const retryable = error.code === -2 || error.code === 'TIMEOUT' || error.code === 'NETWORK';
-          if (!retryable) break;
+          lastReason = error.message || '未知错误';
+          if (NON_RETRYABLE_START_CODES.has(error.code)) break;
         }
 
-        if (attempt < TIMING.envStartAttempts) {
+        if (attempt < total) {
+          const waitMs = attempt * TIMING.envStartBackoff;
           log(
-            `　实验环境未就绪（${lastReason.slice(0, 40)}），${Math.round(TIMING.envStartRetryGap / 1000)} 秒后重试（${attempt}/${TIMING.envStartAttempts - 1}）…`,
+            `　容器申请未就绪（${lastReason.slice(0, 80)}），${Math.round(waitMs / 1000)} 秒后重试（第 ${attempt}/${total} 次）…`,
             MSG_LEVEL.WARN,
           );
-          await sleep(TIMING.envStartRetryGap, signal);
+          await sleep(waitMs, signal);
         }
+      }
+
+      if (sawStatusZeroWithoutSsh) {
+        await deleteRemotePod(nextLease, { silent: true });
       }
       throw new Error(`容器启动失败：${lastReason.slice(0, 120)}`);
     },
@@ -359,28 +292,24 @@ export function createSshSession({ api = Api, sshClient = SshClient } = {}) {
       return { bytes: bytes.byteLength, chunks: chunks.length };
     },
 
-    /** Reads and caches `/data/protectspace/evaluate.sh` for the duration of the job session. */
-    async loadEvaluate({ log = () => {}, signal = null } = {}) {
-      if (evaluate) return evaluate;
-      const script = await this.readFile(EVALUATE_SCRIPT_PATH, { log, signal });
-      const parsed = parseEvaluateScript(script);
-      if (!parsed.sourceClassNames.length) {
-        throw new Error('未在 evaluate.sh 中解析到 sourceClassNames');
-      }
-      evaluate = parsed;
-      return evaluate;
+    /**
+     * Clears local pod state and destroys the remote container instance (`exit_delete_pod.json`)
+     * in a single idempotent step.
+     */
+    async destroy({ log = () => {} } = {}) {
+      const activeLease = lease;
+      pod = null;
+      lease = null;
+      if (!activeLease) return false;
+      const released = await deleteRemotePod(activeLease, { log });
+      if (released) log('　已释放容器实例', MSG_LEVEL.INFO);
+      return released;
     },
 
-    /** Resolves the evaluation target (`scriptRel` / `scriptAbs`) for a 1-based stage position. */
-    stageTarget(position) {
-      if (!evaluate) throw new Error('尚未加载 evaluate.sh 评测配置');
-      return resolveStageTarget(evaluate, position);
-    },
-
-    /** Releases references held for this session so the next job starts completely clean. */
+    /** Clears in-memory references held for this session without calling remote teardown APIs. */
     close() {
       pod = null;
-      evaluate = null;
+      lease = null;
     },
   };
 }

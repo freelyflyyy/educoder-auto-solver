@@ -5,6 +5,7 @@ import { Http } from '../core/transport.js';
 
 const UTF8_DECODER = new TextDecoder();
 
+/** Appends URL-encoded query parameters and the current `zzud` session token to a path. */
 function withQuery(path, params = {}) {
   const parts = [];
   for (const [key, value] of Object.entries(params)) {
@@ -30,6 +31,7 @@ export const Api = {
       competition_entry_id: '',
     };
   },
+  /** Builds the payload for submitting a grading build (`game_build.json`). */
   gradePayload(detail, key, { env, commitId, tabType }) {
     return {
       sec_key: detail.sec_key || '',
@@ -41,6 +43,7 @@ export const Api = {
       extras: { ...this.gradeExtras(detail, key), commitID: String(commitId || '') },
     };
   },
+  /** Fetches the user's enrolled courses list. */
   courses(signal = null) {
     return Http.get(withQuery('/courses.json', {
       page: 1,
@@ -49,6 +52,7 @@ export const Api = {
       search: '',
     }), signal).then(data => data.courses || []);
   },
+  /** Fetches pending shixun homework items within a classroom course. */
   homeworks(courseId, signal = null) {
     return Http.get(withQuery(`/courses/${encodeURIComponent(courseId)}/homework_commons.json`, {
       limit: 100,
@@ -58,16 +62,19 @@ export const Api = {
       order: 0,
     }), signal).then(data => data.homeworks || []);
   },
+  /** Resolves the entry `game_identifier` for a shixun homework assignment. */
   entryGame(shixunId, homeworkId, signal = null) {
     return Http.get(withQuery(`/shixuns/${encodeURIComponent(shixunId)}/shixun_exec.json`, {
       homework_common_id: homeworkId,
     }), signal).then(data => (data.game_identifier ? String(data.game_identifier) : ''));
   },
+  /** Fetches detailed challenge metadata, choices, repository paths, and test sets for a stage. */
   detail(gameId, homeworkId, signal = null) {
     return Http.get(withQuery(`/tasks/${encodeURIComponent(gameId)}.json`, {
       homework_common_id: homeworkId,
     }), signal);
   },
+  /** Submits multiple-choice answers (`choose_build.json`) and returns grading feedback. */
   choose(gameId, body, signal = null) {
     return Http.post(withQuery(`/tasks/${encodeURIComponent(gameId)}/choose_build.json`), body, signal);
   },
@@ -106,16 +113,28 @@ export const Api = {
   grade(gameId, payload, signal = null) {
     return Http.post(withQuery(`/tasks/${encodeURIComponent(gameId)}/game_build.json`), payload, signal);
   },
-  /**
-   * Launch the experiment container and retrieve the SSH/VNC connection information (start.json).
-   */
-  startEnv(shixunId, { envId, gameDbId, tabType = 3, homeworkId }, signal = null) {
+  /** Launches the experiment container and retrieves SSH/VNC connection info (`start.json`). */
+  startEnv(shixunId, { envId, gameDbId, tabType = 3, homeworkId } = {}, signal = null) {
     return Http.get(withQuery(`/myshixuns/${encodeURIComponent(shixunId)}/start.json`, {
       shixun_environment_id: envId,
       game_id: gameDbId,
       tab_type: tabType,
       homework_common_id: homeworkId,
     }), signal);
+  },
+  /**
+   * Destroys the active challenge container (`exit_delete_pod.json`) to release its instance slot.
+   *
+   * Educoder caps concurrent container instances at 5 per user, so containers should be destroyed
+   * once a homework `JobSession` finishes all stages (whether passed, failed, or aborted).
+   */
+  exitDeletePod(shixunId, { envId, gameDbId, tabType = 3, homeworkId } = {}, signal = null) {
+    return Http.post(withQuery(`/myshixuns/${encodeURIComponent(shixunId)}/exit_delete_pod.json`), {
+      shixun_environment_id: envId,
+      game_id: gameDbId,
+      tab_type: tabType,
+      homework_common_id: homeworkId,
+    }, signal);
   },
   /**
    * Triggers an evaluation build with linear backoff on platform queue congestion (`status: -2`).
