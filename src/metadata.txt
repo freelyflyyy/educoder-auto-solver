@@ -1,0 +1,16 @@
+// ==UserScript==
+// @name         头歌自动答题助手
+// @namespace    edu-helper.local
+// @version      1.2.0
+// @author       如风
+// @description  头歌实训纯接口自动化：扫描 → 队列 → 逐关答题，全程不跳页
+// @icon         data:image/png;base64,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
+// @match        https://www.educoder.net/*
+// @match        https://educoder.net/*
+// @run-at       document-idle
+// @noframes
+// @grant        GM_xmlhttpRequest
+// @connect      data.educoder.net
+// @connect      *
+// 说明：@connect * 允许用户填写任意 OpenAI 兼容端点，不绑定具体服务商
+// ==/UserScript==
