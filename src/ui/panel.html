@@ -1,0 +1,236 @@
+<div class="dock">
+  <button type="button" class="pill" id="pill" aria-controls="panel" aria-expanded="false">
+    {{MARK}}<span>头歌自动答题助手</span><span id="pillCount" class="numeric"></span>
+  </button>
+  <section class="panel" id="panel" aria-labelledby="panelTitle" tabindex="-1" hidden>
+    <header class="heading" id="handle">
+      <div class="brand">
+        {{MARK}}<div class="brand-title"><h2 id="panelTitle">头歌自动答题助手</h2><span class="version">v{{VERSION}}</span></div>
+      </div>
+      <span class="phase" id="status" role="status"></span>
+      <div class="header-actions">
+        <button type="button" id="gear" aria-controls="settings" aria-expanded="false">设置</button>
+        <button type="button" class="collapse" id="hide" aria-label="收起面板" title="收起面板">−</button>
+      </div>
+    </header>
+
+    <div class="screen" id="work">
+      <div class="screen-body">
+        <section class="card">
+          <h3 class="muted">当前课程</h3>
+          <strong class="course" id="course"></strong>
+          <p class="current" id="current"></p>
+          <div class="meter">
+            <div class="meter-label"><span>答题进度</span><span class="numeric muted" id="metric"></span></div>
+            <progress id="bar" aria-label="答题进度"></progress>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head">
+            <h3>待办作业</h3>
+            <button type="button" class="ghost-btn" id="rescan" title="重新扫描当前页面的作业与关卡">重新扫描</button>
+          </div>
+          <div class="scan-state" id="scanState" hidden>
+            <div class="scan-spinner" role="status" aria-label="正在扫描关卡列表"></div>
+            <p class="scan-title" id="scanTitle">正在扫描关卡列表…</p>
+            <div class="scan-progress" id="scanBar" role="progressbar"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="scan-progress-fill" id="scanFill"></div>
+            </div>
+            <p class="scan-count" id="scanCount">正在读取…</p>
+          </div>
+          <div class="entries" id="rows"></div>
+        </section>
+        <section class="card">
+          <h3 id="logTitle">运行日志</h3>
+          <div class="entries" id="logs" role="log" aria-labelledby="logTitle" aria-live="off"></div>
+        </section>
+      </div>
+      <footer>
+        <button type="button" id="stop">结束答题</button>
+        <button type="button" class="main" id="start">开始答题</button>
+      </footer>
+    </div>
+
+    <div class="screen" id="summary" hidden>
+      <div class="screen-body">
+        <section class="card" aria-label="答题统计">
+          <dl class="result-totals numeric">
+            <div class="success"><dt>已通过</dt><dd id="passedCount"></dd></div>
+            <div class="warn"><dt>已跳过</dt><dd id="skippedCount"></dd></div>
+            <div class="error"><dt>未通过</dt><dd id="failedCount"></dd></div>
+          </dl>
+          <div class="meter">
+            <div class="meter-label"><span id="rate"></span></div>
+            <progress id="resultBar" aria-label="通过率"></progress>
+          </div>
+        </section>
+        <section class="card result-details" aria-label="关卡明细">
+          <div class="result-detail"><h3 class="success">已通过关卡</h3><p id="passedList"></p></div>
+          <div class="result-detail"><h3 class="warn">已跳过关卡</h3><p id="skippedList"></p></div>
+          <div class="result-detail"><h3 class="error">未通过关卡</h3><p id="failedList"></p></div>
+        </section>
+        <p class="ended" id="ended"></p>
+      </div>
+      <footer>
+        <button type="button" id="again">返回列表</button>
+        <button type="button" class="main" id="retry">重试未通过关卡</button>
+      </footer>
+    </div>
+
+    <div class="screen" id="settings" hidden>
+      <div class="screen-body">
+        <div class="tabs" role="tablist" aria-label="设置分类">
+          <button type="button" class="tab" id="tab-general" role="tab" aria-controls="pane-general" aria-selected="true">常规设置</button>
+          <button type="button" class="tab" id="tab-ai" role="tab" aria-controls="pane-ai" aria-selected="false" tabindex="-1">AI 模型</button>
+        </div>
+        <div id="pane-general" role="tabpanel" aria-labelledby="tab-general">
+          <form class="card pane" id="generalForm" novalidate>
+            <div class="setting-section">
+              <div class="section-head"><span class="section-title">运行与显示</span></div>
+              <div class="grid-3">
+                <label>启动缓冲
+                  <select id="delay" name="delay">
+                    <option value="1">1 秒</option><option value="3">3 秒</option>
+                    <option value="5">5 秒</option><option value="10">10 秒</option>
+                  </select>
+                </label>
+                <label>失败重试
+                  <select id="codeRetries" name="codeRetries" aria-describedby="retryHint">
+                    <option value="0">不重试</option><option value="1">1 次</option>
+                    <option value="2">2 次</option><option value="3">3 次</option><option value="4">4 次</option>
+                  </select>
+                </label>
+                <label>日志行数
+                  <select id="logRows" name="logRows">
+                    <option value="6">6 条</option><option value="12">12 条</option>
+                    <option value="24">24 条</option><option value="40">40 条</option>
+                  </select>
+                </label>
+              </div>
+              <span class="setting-hint" id="retryHint">失败重试：代码首次评测未过时，结合报错让 AI 自动修正的次数。</span>
+              <div class="check-list">
+                <label class="check-card">
+                  <input type="checkbox" id="auto" name="auto">
+                  <span class="check-body"><span class="check-title">进入作业或关卡页时自动开始答题</span></span>
+                </label>
+                <label class="check-card">
+                  <input type="checkbox" id="titleProgress" name="titleProgress">
+                  <span class="check-body"><span class="check-title">在浏览器标签页标题上实时显示进度</span></span>
+                </label>
+                <label class="check-card">
+                  <input type="checkbox" id="aiFallback" name="aiFallback">
+                  <span class="check-body">
+                    <span class="check-title">启用 AI 编程兜底</span>
+                    <span class="setting-hint">优先提取判分脚本、参考答案与用例通关；均无时才调用 AI 写代码。</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="setting-section">
+              <div class="section-head">
+                <span class="label-row">
+                  <span class="section-title">远程 SSH 网关（Linux 环境题选填）</span>
+                  <span class="help-tip" tabindex="0" role="note" aria-label="为什么需要远程 SSH 网关" data-tip="需要启动 Linux 实验环境完成评测的关卡（如部分 StarUML、VNC 或容器实训）没有网页直接提交接口，需借助配套的 cf-ssh-exec 网关连入实验容器。普通选择题、填空题与常规编程题无需配置，留空即可。">?</span>
+                </span>
+                <a class="doc-link" href="https://github.com/freelyflyyy/educoder-auto-solver/tree/main/cf-ssh-exec#readme" target="_blank" rel="noopener noreferrer">如何获取？</a>
+              </div>
+              <div class="sample-grid">
+                <label>网关地址
+                  <input id="sshBase" name="sshBase" inputmode="url" autocomplete="off" placeholder="https://cf-ssh-exec.example.workers.dev">
+                </label>
+                <label>网关密钥
+                  <input id="sshKey" name="sshKey" type="password" autocomplete="off" placeholder="填写 SSH_API_KEY">
+                </label>
+              </div>
+              <p class="setting-hint">仅需要启动 Linux 实验环境的关卡使用；留空时自动跳过此类关卡，不影响常规题目。</p>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="resetGeneral">恢复默认</button>
+              <button type="submit" class="main" id="save">保存设置</button>
+            </div>
+          </form>
+        </div>
+        <div id="pane-ai" role="tabpanel" aria-labelledby="tab-ai" hidden>
+          <form class="card pane" id="aiForm" novalidate>
+            <div class="setting-section">
+              <div class="section-head"><span class="section-title">模型接口连接</span></div>
+              <p id="aiState" class="muted" role="status"></p>
+              <label>接口地址 (Base URL)<input id="aiBase" name="base" inputmode="url" placeholder="https://api.deepseek.com/v1"></label>
+              <div class="sample-grid">
+                <label>模型名称 (Model)<input id="aiModel" name="model" placeholder="deepseek-v4-pro"></label>
+                <label>接口密钥 (API Key)<input id="aiKey" name="key" type="password" autocomplete="off" placeholder="sk-..."></label>
+              </div>
+              <div class="check-list">
+                <label class="check-card">
+                  <input type="checkbox" id="aiVision" name="vision">
+                  <span class="check-body">
+                    <span class="check-title">启用图片识别（多模态视觉）</span>
+                    <span class="setting-hint">自动下载题干配图传给模型，需模型支持视觉（如 gpt-4o、qwen-vl-max）。</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <details class="advanced" id="aiAdvanced">
+              <summary>高级生成参数（通常保持默认即可）</summary>
+              <div class="advanced-content">
+                <div class="sample-grid">
+                  <label>最大输出 Token<input id="aiTokens" name="maxTokens" type="number" min="1" max="393216" step="1"></label>
+                  <label>请求超时（秒）<input id="aiTimeout" name="timeout" type="number" min="15" max="600" step="1"></label>
+                  <label>深度思考模式
+                    <select id="aiThinking" name="thinking">
+                      <option value="auto">自动适配</option><option value="on">强制开启</option><option value="off">强制关闭</option>
+                    </select>
+                  </label>
+                  <label>思考强度
+                    <select id="aiThinkLevel" name="thinkLevel">
+                      <option value="low">低</option><option value="medium">中</option><option value="high">高</option>
+                    </select>
+                  </label>
+                </div>
+                <fieldset class="sampling-settings" aria-describedby="samplingHint">
+                  <legend>采样与惩罚控制</legend>
+                  <p id="samplingHint" class="setting-hint" hidden></p>
+                  <div class="sample-grid" id="samplingFields">
+                    <label id="samplingChoice">采样方式
+                      <select id="aiSampling" name="sampling">
+                        <option value="temperature">温度 (Temperature)</option><option value="topP">核采样 (top_p)</option>
+                      </select>
+                    </label>
+                    <label id="temperatureField">温度 (0–2)<input id="aiTemperature" name="temperature" type="number" min="0" max="2" step="0.01"></label>
+                    <label id="topPField">top_p (0.01–1)<input id="aiTopP" name="topP" type="number" min="0.01" max="1" step="0.01"></label>
+                  </div>
+                  <div class="sample-grid" id="penaltyFields">
+                    <label>频率惩罚<input id="aiFreq" name="frequencyPenalty" type="number" min="-2" max="2" step="0.1"></label>
+                    <label>存在惩罚<input id="aiPres" name="presencePenalty" type="number" min="-2" max="2" step="0.1"></label>
+                  </div>
+                </fieldset>
+                <label>强制 JSON 格式输出
+                  <select id="aiJsonMode" name="jsonMode">
+                    <option value="auto">自动适配</option><option value="on">强制开启</option><option value="off">强制关闭</option>
+                  </select>
+                </label>
+                <label>自定义请求参数（JSON，选填）
+                  <textarea id="aiExtra" name="extraBody" spellcheck="false" placeholder='例如：{"top_k": 40}'></textarea>
+                </label>
+                <label>自定义附加指令（选填）
+                  <textarea id="aiPrompt" name="extraPrompt" placeholder="例如：优先使用简洁的标准库写法，不添加多余注释"></textarea>
+                </label>
+                <div class="form-actions"><button type="button" id="clearTpl">清空本地代码模板缓存</button></div>
+              </div>
+            </details>
+            <div class="form-actions">
+              <button type="button" id="resetAi">恢复默认</button>
+              <button type="button" id="testAi">测试连接</button>
+              <button type="submit" class="main" id="saveAi">保存配置</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
